@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Tryb drzwi",
+        "state": {
+          "normal": "Normalny",
+          "release": "Zwolnione",
+          "permanent_release": "Stałe zwolnienie",
+          "secure": "Zabezpieczone",
+          "block": "Zablokowane"
+        }
+      }
+    }
+  }
+}

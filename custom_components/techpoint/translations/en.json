@@ -1,0 +1,91 @@
+{
+  "config": {
+    "error": {
+      "auth": "Authentication failed",
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Auth type (normally 2)",
+          "base_url": "Cloud base URL (e.g. https://example.azurewebsites.net)",
+          "device_id": "Device ID",
+          "name": "Name",
+          "password": "Password",
+          "scan_interval": "Update interval (seconds)",
+          "username": "User name",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the regular TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/host (e.g. 10.0.0.5)",
+          "lan_password": "Password",
+          "lan_token": "Bearer token (optional)",
+          "lan_username": "Username",
+          "name": "Name",
+          "scan_interval": "Update interval (seconds)",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "description": "Enter only the IP/host. The integration will automatically use /api/v1. If your controller uses a self-signed certificate, keep SSL verify off.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Connection type"
+        },
+        "description": "Choose how you connect to TechPoint.",
+        "title": "Add TechPoint"
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Door mode",
+        "state": {
+          "block": "Block",
+          "normal": "Normal",
+          "permanent_release": "Permanent release",
+          "release": "Release",
+          "secure": "Secure"
+        }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Event log"
+      },
+      "event_log_line": {
+        "name": "Latest event"
+      },
+      "last_event": {
+        "name": "Last event"
+      },
+      "webhook_url": {
+        "name": "Webhook URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Device grouping (Devices)",
+          "event_log_max": "Event log size (number of entries)",
+          "events_alarm": "Realtime: Alarm arm/disarm events",
+          "events_door": "Realtime: Door/access events",
+          "events_error": "Realtime: Error/fault events",
+          "events_tamper": "Realtime: Tamper/sabotage events",
+          "scan_interval": "Update interval (seconds)",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "description": "Adjust polling, SSL verification and how devices are grouped in Devices.\n\nWebhook URL (copy/paste into TechPoint):\n{webhook_url}\n\nTechPoint endpoint: {tp_endpoint}\nAuthentication: {auth_type}",
+        "title": "TechPoint options"
+      }
+    }
+  }
+}

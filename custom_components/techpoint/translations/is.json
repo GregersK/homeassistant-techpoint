@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Hurðarstilling",
+        "state": {
+          "normal": "Venjulegt",
+          "release": "Sleppt",
+          "permanent_release": "Varanlega sleppt",
+          "secure": "Læst",
+          "block": "Lokað"
+        }
+      }
+    }
+  }
+}

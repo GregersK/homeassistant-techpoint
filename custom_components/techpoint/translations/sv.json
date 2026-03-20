@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Dörrläge",
+        "state": {
+          "normal": "Normal",
+          "release": "Frigiven",
+          "permanent_release": "Permanent frigiven",
+          "secure": "Säkrad",
+          "block": "Blockerad"
+        }
+      }
+    }
+  }
+}

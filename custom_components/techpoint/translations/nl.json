@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Deurmodus",
+        "state": {
+          "normal": "Normaal",
+          "release": "Vrijgegeven",
+          "permanent_release": "Permanent vrijgegeven",
+          "secure": "Beveiligd",
+          "block": "Geblokkeerd"
+        }
+      }
+    }
+  }
+}

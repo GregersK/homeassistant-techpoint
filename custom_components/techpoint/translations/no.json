@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Dørmodus",
+        "state": {
+          "normal": "Normal",
+          "release": "Frigitt",
+          "permanent_release": "Permanent frigitt",
+          "secure": "Sikret",
+          "block": "Blokkert"
+        }
+      }
+    }
+  }
+}

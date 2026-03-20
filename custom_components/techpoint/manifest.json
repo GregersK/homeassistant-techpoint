@@ -1,0 +1,16 @@
+{
+  "codeowners": [
+    "@GregersK"
+  ],
+  "config_flow": true,
+  "documentation": "https://app.swaggerhub.com/apis-docs/techsolutions.dk/tech-point-api/1",
+  "domain": "techpoint",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "loggers": [
+    "custom_components.techpoint"
+  ],
+  "name": "TechPoint",
+  "requirements": [],
+  "version": "0.4.5"
+}
