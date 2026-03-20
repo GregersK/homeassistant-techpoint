@@ -5,6 +5,7 @@
   "config_flow": true,
   "documentation": "https://app.swaggerhub.com/apis-docs/techsolutions.dk/tech-point-api/1",
   "domain": "techpoint",
+  "homeassistant": "2024.1.0",
   "integration_type": "device",
   "iot_class": "local_polling",
   "loggers": [
