@@ -19,7 +19,7 @@ Custom Home Assistant integration for **TechPoint Access Control Systems** (both
 
 ### Prerequisites
 - Home Assistant 2024.1 or later
-- TechPoint API access (cloud or LAN)
+- TechPoint API access (cloud or LAN) - also API LAN or Cloud license on the TechPoint / Siedle Secure SC-600
 - Network connectivity to TechPoint controller
 
 ### Steps
