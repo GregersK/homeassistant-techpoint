@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-21
+
+### Changed
+- Version bump to 0.5.0 for first public HACS release
+- Added `hacs.json` for HACS integration store compatibility
+- Updated `manifest.json` documentation URL to GitHub repository
+
+### Fixed
+- Removed duplicate `add_update_listener` registration in `async_setup_entry`
+- Translated all Danish error messages in API clients to English
+- Cloud mode diagnostics now reports configuration correctly without webhook setup
+- Silent `except: pass` blocks in unload path now emit debug log entries
+
 ## [0.4.7] - 2025-03-01
 
 ### Fixed
