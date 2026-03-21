@@ -20,7 +20,7 @@ jobs:
       - name: Checkout homeassistant-siedle
         uses: actions/checkout@v4
         with:
-          repository: GregersK/homeassistant-siedle
+          repository: GregersK/homeassistant-siedlesecure
           token: ${{ secrets.SIEDLE_REPO_TOKEN }}
           path: /tmp/siedle-repo
 
@@ -40,6 +40,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to sync."
           else
-            git commit -m "Sync from homeassistant-techpoint@${GITHUB_SHA:0:7}"
+            git commit -m "Sync from homeassistant-techpoint@${GITHUB_SHA:0:7}" --allow-empty
             git push
           fi
