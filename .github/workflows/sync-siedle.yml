@@ -1,0 +1,45 @@
+name: Sync to Siedle Secure SC-600 repo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "custom_components/techpoint/**"
+      - ".siedle/**"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout homeassistant-techpoint
+        uses: actions/checkout@v4
+
+      - name: Generate Siedle integration
+        run: python3 .siedle/sync.py /tmp/siedle-output
+
+      - name: Checkout homeassistant-siedle
+        uses: actions/checkout@v4
+        with:
+          repository: GregersK/homeassistant-siedle
+          token: ${{ secrets.SIEDLE_REPO_TOKEN }}
+          path: /tmp/siedle-repo
+
+      - name: Copy generated files into siedle repo
+        run: |
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='README.md' \
+            /tmp/siedle-output/ /tmp/siedle-repo/
+
+      - name: Commit and push to homeassistant-siedle
+        run: |
+          cd /tmp/siedle-repo
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to sync."
+          else
+            git commit -m "Sync from homeassistant-techpoint@${GITHUB_SHA:0:7}"
+            git push
+          fi
