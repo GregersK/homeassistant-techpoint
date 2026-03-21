@@ -6,19 +6,12 @@
       "unknown": "Nalunngissumik pillugit sumiiffillu"
     },
     "step": {
-      "cloud": {
+      "user": {
         "data": {
-          "auth_type": "Atugarissaarneq sumiiffillu (nalinginnaasumik 2)",
-          "base_url": "Cloud kissarissaarsinnaanissaminnik URL (t.d. https://example.azurewebsites.net)",
-          "device_id": "Suliaq nalunaarusiorfigineqarsinnaasumik",
-          "name": "Ateq",
-          "password": "Nalunaarusiorfik",
-          "scan_interval": "Nutaarsinneqarnissaminnik siunertaq (sekundi)",
-          "username": "Atorfigeqqinnissaminnik ateq",
-          "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
+          "mode": "Kissaatigineq sumiiffillu"
         },
-        "description": "Cloud API kissarissaarsinnaanissaminnik URL, suliaq nalunaarusiorfigineqarsinnaasumik nalunaarusiorfissatik atorlugit. Integrationimi JWT atorlugu atugarissaarneq atorneqarsinnaapput TechPoint Web API-imut.",
-        "title": "TechPoint (Cloud)"
+        "description": "TechPoint kissaatigissavat toqqissimavissaminnik tigumissaaruk.",
+        "title": "Add Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -31,14 +24,21 @@
           "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
         },
         "description": "IP/sullissivissumik kissarissaarsinnaanissaminnik nalunaarusiorfik atorlugit. Integrationimi /api/v1 nammineq atorneqarsinnaapput. Sullissivissumik nalunaarusiorfissaminnik atorsinnaasumik atorluguni, SSL nalunaarissaarneq atorneqarsinnaanngikkaluarluni.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Kissaatigineq sumiiffillu"
+          "auth_type": "Atugarissaarneq sumiiffillu (nalinginnaasumik 2)",
+          "base_url": "Cloud kissarissaarsinnaanissaminnik URL (t.d. https://example.azurewebsites.net)",
+          "device_id": "Suliaq nalunaarusiorfigineqarsinnaasumik",
+          "name": "Ateq",
+          "password": "Nalunaarusiorfik",
+          "scan_interval": "Nutaarsinneqarnissaminnik siunertaq (sekundi)",
+          "username": "Atorfigeqqinnissaminnik ateq",
+          "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
         },
-        "description": "TechPoint kissaatigissavat toqqissimavissaminnik tigumissaaruk.",
-        "title": "TechPoint atorneqarsinnaanngilaq"
+        "description": "Cloud API kissarissaarsinnaanissaminnik URL, suliaq nalunaarusiorfigineqarsinnaasumik nalunaarusiorfissatik atorlugit. Integrationimi JWT atorlugu atugarissaarneq atorneqarsinnaapput TechPoint Web API-imut.",
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Nutaarsinneqarnissaminnik siunertaq (sekundi)",
           "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
         },
-        "description": "Polling, SSL nalunaarissaarneq nalunaarusiorfissatik isikkortitaaleruk.\n\nWebhook-URL (TechPoint-imut aallarsinneqarsinnaappoq):\n{webhook_url}\n\nTechPoint kissarissaarsinnaanissaminnik: {tp_endpoint}\nAtugarissaarneq: {auth_type}",
+        "description": "Polling, SSL nalunaarissaarneq nalunaarusiorfissatik isikkortitaaleruk.\n\nWebhook-URL (Siedle Secure SC-600-imut aallarsinneqarsinnaappoq):\n{webhook_url}\n\nSiedle Secure SC-600 kissarissaarsinnaanissaminnik: {tp_endpoint}\nAtugarissaarneq: {auth_type}",
         "title": "TechPoint isikkortitaanissaminnik"
       }
     }

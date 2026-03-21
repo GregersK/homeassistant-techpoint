@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from homeassistant.const import Platform
 
-DOMAIN = "techpoint"
+DOMAIN = "siedle"
 
 # Device metadata
-MANUFACTURER = "TechSolutions"
-MODEL_CONTROLLER = "TechPoint"
-DEFAULT_NAME = "TechPoint"
+MANUFACTURER = "Siedle"
+MODEL_CONTROLLER = "SC-600"
+DEFAULT_NAME = "Siedle SC-600"
 
 PLATFORMS: list[Platform] = [
     Platform.LOCK,
@@ -45,9 +45,9 @@ DEFAULT_SCAN_INTERVAL = 10
 DEFAULT_VERIFY_SSL_LAN = False
 DEFAULT_VERIFY_SSL_CLOUD = True
 
-# Cloud (TechPoint Cloud API reverse proxy)
+# Cloud API
 CONF_DEVICE_ID = "device_id"
-CONF_AUTH_TYPE = "auth_type"  # typically 2
+CONF_AUTH_TYPE = "auth_type"
 DEFAULT_AUTH_TYPE = 2
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
@@ -57,15 +57,15 @@ CONF_LAN_USERNAME = "lan_username"
 CONF_LAN_PASSWORD = "lan_password"
 CONF_LAN_TOKEN = "lan_token"
 
-# --- Real-time events via TechPoint WebHook (LAN only) ---
+# Real-time events via WebHook (LAN only)
 CONF_EVENTS_DOOR = "events_door"
 CONF_EVENTS_ALARM = "events_alarm"
 CONF_EVENTS_TAMPER = "events_tamper"
 CONF_EVENTS_ERROR = "events_error"
 
-# Realtime event log (keeps last N events in a sensor attribute)
+# Realtime event log
 CONF_EVENT_LOG_MAX = "event_log_max"
 DEFAULT_EVENT_LOG_MAX = 200
-SIGNAL_EVENT_LOG_UPDATED = "techpoint_event_log_updated"
+SIGNAL_EVENT_LOG_UPDATED = "siedle_event_log_updated"
 
-EVENT_BUS_NAME = "techpoint_event"
+EVENT_BUS_NAME = "siedle_event"

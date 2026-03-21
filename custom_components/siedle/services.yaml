@@ -1,0 +1,300 @@
+# TechPoint services
+
+call_api:
+  name: Call API
+  description: Kald et vilkarligt TechPoint endpoint (relativt til /api/v1).
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    method:
+      required: true
+      selector:
+        select:
+          options: [GET, POST, PUT, PATCH, DELETE]
+    path:
+      required: true
+      example: /management/doors/status
+      selector:
+        text: {}
+    params:
+      required: false
+      selector:
+        object: {}
+    body:
+      required: false
+      selector:
+        object: {}
+
+get_cache:
+  name: Get cache
+  description: Emitter koordinatorens seneste snapshot (doors, areas, zones, events, ...).
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+management_set_door_status:
+  name: Set door status
+  description: Skift dor status (normal, release, permanent release, secure, block).
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    door_id:
+      required: true
+      selector:
+        text: {}
+    status:
+      required: true
+      selector:
+        select:
+          options: [Normal, Release, PermanentRelease, Secure, Block]
+
+aia_update_zone:
+  name: Update intrusion zone
+  description: PUT /aia/zones/{zoneId}
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    zone_id:
+      required: true
+      selector:
+        text: {}
+    body:
+      required: true
+      selector:
+        object: {}
+
+aia_update_area:
+  name: Update intrusion area
+  description: PUT /aia/areas/{areaId}
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    area_id:
+      required: true
+      selector:
+        text: {}
+    body:
+      required: true
+      selector:
+        object: {}
+
+access_get_groups:
+  name: List access groups
+  description: GET /access/accessGroups
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+access_get_static_types:
+  name: Get card option types
+  description: GET /access/static/types
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+access_list_cardholders:
+  name: List cardholders
+  description: List cardholders (uses POST /access/cardHolders/filter internally, because GET /access/cardHolders often requires a single parameter)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+access_list_cardholders_filter:
+  name: Filter cardholders
+  description: POST /access/cardHolders/filter (you can pass either the full wrapper {cardHolderFilter:{...}} or just the inner filter object)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    filter:
+      required: true
+      selector:
+        object: {}
+
+access_create_cardholder:
+  name: Create cardholder
+  description: POST /access/cardHolders (numeric id is auto-assigned if missing; provide id.extId if you want a stable external id)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    body:
+      required: true
+      selector:
+        object: {}
+
+access_update_cardholder:
+  name: Update cardholder
+  description: PUT /access/cardHolders
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    body:
+      required: true
+      selector:
+        object: {}
+
+access_delete_cardholder:
+  name: Delete cardholder
+  description: DELETE /access/cardHolders (id eller ext_id)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    id:
+      required: false
+      selector:
+        number:
+          min: 1
+    ext_id:
+      required: false
+      selector:
+        text: {}
+
+access_list_cards:
+  name: List cards
+  description: GET /access/cards
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+access_list_cards_filter:
+  name: Filter cards
+  description: POST /access/cards/filter (you can pass either the full wrapper {cardFilter:{...}} or just the inner filter object)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    filter:
+      required: true
+      selector:
+        object: {}
+
+access_create_card:
+  name: Create card
+  description: POST /access/cards (numeric id is auto-assigned if missing)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    body:
+      required: true
+      selector:
+        object: {}
+
+access_update_card:
+  name: Update card
+  description: PUT /access/cards (card_id + body)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    card_id:
+      required: true
+      selector:
+        number:
+          min: 1
+    body:
+      required: true
+      selector:
+        object: {}
+
+access_delete_card:
+  name: Delete card
+  description: DELETE /access/cards (id)
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    card_id:
+      required: true
+      selector:
+        number:
+          min: 1
+
+events_get:
+  name: Get events
+  description: GET /events
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+    since:
+      required: false
+      selector:
+        text: {}
+    until:
+      required: false
+      selector:
+        text: {}
+    limit:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 10000
+    filters:
+      required: false
+      selector:
+        object: {}
+
+door_set_status_by_entity:
+  name: Set door status (entity)
+  description: Set door status by selecting a TechPoint door entity (recommended).
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: techpoint
+    status:
+      required: true
+      selector:
+        select:
+          options: [Normal, Release, PermanentRelease, Secure, Block]
+
+refresh:
+  name: Refresh
+  description: Trigger an immediate refresh of TechPoint data.
+  fields:
+    entry_id:
+      required: true
+      selector:
+        text: {}
+
+cleanup_orphan_devices:
+  name: Cleanup orphan devices
+  description: Remove legacy/orphan TechPoint devices that no longer have any entities.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}

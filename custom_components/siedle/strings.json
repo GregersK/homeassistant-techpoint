@@ -2,14 +2,14 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add TechPoint",
-        "description": "Choose how you connect to TechPoint.",
+        "title": "Add Siedle Secure SC-600",
+        "description": "Choose how you connect to your Siedle Secure SC-600 controller.",
         "data": {
           "mode": "Connection type"
         }
       },
       "lan": {
-        "title": "TechPoint (LAN)",
+        "title": "Siedle Secure SC-600 (LAN)",
         "description": "Enter only the IP/host. The integration will automatically use /api/v1. If your controller uses a self-signed certificate, keep SSL verify off.",
         "data": {
           "base_url": "IP/host (e.g. 10.0.0.5)",
@@ -22,8 +22,8 @@
         }
       },
       "cloud": {
-        "title": "TechPoint (Cloud)",
-        "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the regular TechPoint Web API.",
+        "title": "Siedle Secure SC-600 (Cloud)",
+        "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT.",
         "data": {
           "base_url": "Cloud base URL (e.g. https://example.azurewebsites.net)",
           "device_id": "Device ID",
@@ -45,7 +45,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "TechPoint options",
+        "title": "Siedle Secure SC-600 options",
         "description": "Adjust polling, SSL verification and how devices are grouped in Devices.",
         "data": {
           "scan_interval": "Update interval (seconds)",

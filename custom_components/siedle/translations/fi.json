@@ -6,19 +6,12 @@
       "unknown": "Odottamaton virhe"
     },
     "step": {
-      "cloud": {
+      "user": {
         "data": {
-          "auth_type": "Todennustyyppi (yleensä 2)",
-          "base_url": "Cloud-pohja-URL (esim. https://example.azurewebsites.net)",
-          "device_id": "Laitetunnus",
-          "name": "Nimi",
-          "password": "Salasana",
-          "scan_interval": "Päivitysväli (sekuntia)",
-          "username": "Käyttäjänimi",
-          "verify_ssl": "Tarkista SSL-sertifikaatti"
+          "mode": "Yhteystyyppi"
         },
-        "description": "Anna Cloud API:n pohja-URL, laitetunnus ja tunnistetiedot. Integraatio todentaa JWT:llä ja välittää kutsut tavalliselle TechPoint Web API:lle.",
-        "title": "TechPoint (Cloud)"
+        "description": "Valitse, miten yhdistät TechPointiin.",
+        "title": "Lisää Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -31,14 +24,21 @@
           "verify_ssl": "Tarkista SSL-sertifikaatti"
         },
         "description": "Anna vain IP/isäntä. Integraatio käyttää automaattisesti /api/v1. Jos ohjain käyttää itse allekirjoitettua sertifikaattia, jätä SSL-tarkistus pois käytöstä.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Yhteystyyppi"
+          "auth_type": "Todennustyyppi (yleensä 2)",
+          "base_url": "Cloud-pohja-URL (esim. https://example.azurewebsites.net)",
+          "device_id": "Laitetunnus",
+          "name": "Nimi",
+          "password": "Salasana",
+          "scan_interval": "Päivitysväli (sekuntia)",
+          "username": "Käyttäjänimi",
+          "verify_ssl": "Tarkista SSL-sertifikaatti"
         },
-        "description": "Valitse, miten yhdistät TechPointiin.",
-        "title": "Lisää TechPoint"
+        "description": "Anna Cloud API:n pohja-URL, laitetunnus ja tunnistetiedot. Integraatio todentaa JWT:llä ja välittää kutsut tavalliselle TechPoint Web API:lle.",
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Päivitysväli (sekuntia)",
           "verify_ssl": "Tarkista SSL-sertifikaatti"
         },
-        "description": "Säädä kyselyä, SSL-tarkistusta ja laitteiden ryhmittelyä.\n\nWebhook-URL (kopioi/liitä TechPointiin):\n{webhook_url}\n\nTechPoint-päätepiste: {tp_endpoint}\nTodennus: {auth_type}",
+        "description": "Säädä kyselyä, SSL-tarkistusta ja laitteiden ryhmittelyä.\n\nWebhook-URL (kopioi/liitä Siedle Secure SC-600iin):\n{webhook_url}\n\nSiedle Secure SC-600-päätepiste: {tp_endpoint}\nTodennus: {auth_type}",
         "title": "TechPoint-asetukset"
       }
     }

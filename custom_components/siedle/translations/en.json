@@ -7,11 +7,24 @@
     },
     "step": {
       "user": {
-        "title": "Add TechPoint",
-        "description": "Choose how you connect to TechPoint.",
+        "title": "Add Siedle Secure SC-600",
+        "description": "Choose how you connect to the controller.",
         "data": {
           "mode": "Connection type"
         }
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/host (e.g. 10.0.0.5)",
+          "lan_password": "Password",
+          "lan_token": "Bearer token (optional)",
+          "lan_username": "Username",
+          "name": "Name",
+          "scan_interval": "Update interval (seconds)",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "description": "Enter only the IP/host. The integration will automatically use /api/v1. If your controller uses a self-signed certificate, keep SSL verify off.",
+        "title": "Siedle Secure SC-600 (LAN)"
       },
       "cloud": {
         "data": {
@@ -25,20 +38,7 @@
           "verify_ssl": "Verify SSL certificate"
         },
         "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the controller's Web API.",
-        "title": "TechPoint (Cloud)"
-      },
-      "lan": {
-        "data": {
-          "base_url": "IP/host (e.g. 10.0.0.5)",
-          "lan_password": "Password",
-          "lan_token": "Bearer token (optional)",
-          "lan_username": "Username",
-          "name": "Name",
-          "scan_interval": "Update interval (seconds)",
-          "verify_ssl": "Verify SSL certificate"
-        },
-        "description": "Enter only the IP/host. The integration will automatically use /api/v1. If your controller uses a self-signed certificate, keep SSL verify off.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -84,7 +84,7 @@
           "verify_ssl": "Verify SSL certificate"
         },
         "description": "Adjust polling, SSL verification and how devices are grouped in Devices.\n\nWebhook URL (copy/paste into controller UI):\n{webhook_url}\n\nController endpoint: {tp_endpoint}\nAuthentication: {auth_type}",
-        "title": "Controller options"
+        "title": "Siedle Secure SC-600 options"
       }
     }
   }

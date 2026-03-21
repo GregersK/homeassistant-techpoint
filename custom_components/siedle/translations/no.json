@@ -6,19 +6,12 @@
       "unknown": "Uventet feil"
     },
     "step": {
-      "cloud": {
+      "user": {
         "data": {
-          "auth_type": "Autentiseringstype (vanligvis 2)",
-          "base_url": "Cloud-basis-URL (f.eks. https://example.azurewebsites.net)",
-          "device_id": "Enhets-ID",
-          "name": "Navn",
-          "password": "Passord",
-          "scan_interval": "Oppdateringsintervall (sekunder)",
-          "username": "Brukernavn",
-          "verify_ssl": "Bekreft SSL-sertifikat"
+          "mode": "Tilkoblingstype"
         },
-        "description": "Skriv inn Cloud API-basis-URL, enhets-ID og påloggingsinformasjon. Integrasjonen autentiserer via JWT og videresender anrop til den vanlige TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "description": "Velg hvordan du vil koble til TechPoint.",
+        "title": "Legg til Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -31,14 +24,21 @@
           "verify_ssl": "Bekreft SSL-sertifikat"
         },
         "description": "Skriv bare inn IP/vert. Integrasjonen bruker automatisk /api/v1. Hvis kontrolleren bruker et selvsignert sertifikat, la SSL-bekreftelse stå av.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Tilkoblingstype"
+          "auth_type": "Autentiseringstype (vanligvis 2)",
+          "base_url": "Cloud-basis-URL (f.eks. https://example.azurewebsites.net)",
+          "device_id": "Enhets-ID",
+          "name": "Navn",
+          "password": "Passord",
+          "scan_interval": "Oppdateringsintervall (sekunder)",
+          "username": "Brukernavn",
+          "verify_ssl": "Bekreft SSL-sertifikat"
         },
-        "description": "Velg hvordan du vil koble til TechPoint.",
-        "title": "Legg til TechPoint"
+        "description": "Skriv inn Cloud API-basis-URL, enhets-ID og påloggingsinformasjon. Integrasjonen autentiserer via JWT og videresender anrop til den vanlige TechPoint Web API.",
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Oppdateringsintervall (sekunder)",
           "verify_ssl": "Bekreft SSL-sertifikat"
         },
-        "description": "Juster polling, SSL-bekreftelse og enhetsgruppering.\n\nWebhook-URL (kopier/lim inn i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nAutentisering: {auth_type}",
+        "description": "Juster polling, SSL-bekreftelse og enhetsgruppering.\n\nWebhook-URL (kopier/lim inn i Siedle Secure SC-600):\n{webhook_url}\n\nSiedle Secure SC-600-endepunkt: {tp_endpoint}\nAutentisering: {auth_type}",
         "title": "TechPoint-innstillinger"
       }
     }

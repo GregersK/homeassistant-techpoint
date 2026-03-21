@@ -6,19 +6,12 @@
       "unknown": "Óvænt villa"
     },
     "step": {
-      "cloud": {
+      "user": {
         "data": {
-          "auth_type": "Auðkenningartegund (venjulega 2)",
-          "base_url": "Cloud grunnslóð (t.d. https://example.azurewebsites.net)",
-          "device_id": "Tækjaauðkenni",
-          "name": "Nafn",
-          "password": "Lykilorð",
-          "scan_interval": "Uppfærslubiðtími (sekúndur)",
-          "username": "Notandanafn",
-          "verify_ssl": "Staðfesta SSL-skírteini"
+          "mode": "Tengingargerð"
         },
-        "description": "Sláðu inn Cloud API grunnslóð, tækjaauðkenni og innskráningarupplýsingar. Samþætting mun auðkenna með JWT og senda beiðnir á venjulegt TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "description": "Veldu hvernig þú tengist TechPoint.",
+        "title": "Add Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -31,14 +24,21 @@
           "verify_ssl": "Staðfesta SSL-skírteini"
         },
         "description": "Sláðu aðeins inn IP/hýsil. Samþætting mun sjálfkrafa nota /api/v1. Ef stjórnandi þinn notar sjálfundirritað skírteini, skaltu slökkva á SSL-staðfestingu.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Tengingargerð"
+          "auth_type": "Auðkenningartegund (venjulega 2)",
+          "base_url": "Cloud grunnslóð (t.d. https://example.azurewebsites.net)",
+          "device_id": "Tækjaauðkenni",
+          "name": "Nafn",
+          "password": "Lykilorð",
+          "scan_interval": "Uppfærslubiðtími (sekúndur)",
+          "username": "Notandanafn",
+          "verify_ssl": "Staðfesta SSL-skírteini"
         },
-        "description": "Veldu hvernig þú tengist TechPoint.",
-        "title": "Bæta við TechPoint"
+        "description": "Sláðu inn Cloud API grunnslóð, tækjaauðkenni og innskráningarupplýsingar. Samþætting mun auðkenna með JWT og senda beiðnir á venjulegt TechPoint Web API.",
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Uppfærslubiðtími (sekúndur)",
           "verify_ssl": "Staðfesta SSL-skírteini"
         },
-        "description": "Stilla könnun, SSL-staðfestingu og flokkun tækja.\n\nWebhook-slóð (afritaðu/límdu inn í TechPoint):\n{webhook_url}\n\nTechPoint endapunktur: {tp_endpoint}\nAuðkenning: {auth_type}",
+        "description": "Stilla könnun, SSL-staðfestingu og flokkun tækja.\n\nWebhook-slóð (afritaðu/límdu inn í Siedle Secure SC-600):\n{webhook_url}\n\nSiedle Secure SC-600 endapunktur: {tp_endpoint}\nAuðkenning: {auth_type}",
         "title": "TechPoint stillingar"
       }
     }

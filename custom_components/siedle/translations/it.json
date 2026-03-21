@@ -6,19 +6,12 @@
       "unknown": "Errore imprevisto"
     },
     "step": {
-      "cloud": {
+      "user": {
         "data": {
-          "auth_type": "Tipo di autenticazione (normalmente 2)",
-          "base_url": "URL base Cloud (es. https://example.azurewebsites.net)",
-          "device_id": "ID dispositivo",
-          "name": "Nome",
-          "password": "Password",
-          "scan_interval": "Intervallo di aggiornamento (secondi)",
-          "username": "Nome utente",
-          "verify_ssl": "Verifica certificato SSL"
+          "mode": "Tipo di connessione"
         },
-        "description": "Inserisci l'URL base Cloud API, l'ID dispositivo e le credenziali. L'integrazione si autenticherà tramite JWT e instraderà le chiamate all'API Web TechPoint standard.",
-        "title": "TechPoint (Cloud)"
+        "description": "Scegli come connetterti a TechPoint.",
+        "title": "Aggiungi Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -31,14 +24,21 @@
           "verify_ssl": "Verifica certificato SSL"
         },
         "description": "Inserisci solo l'IP/host. L'integrazione utilizzerà automaticamente /api/v1. Se il controller usa un certificato autofirmato, disabilita la verifica SSL.",
-        "title": "TechPoint (LAN)"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Tipo di connessione"
+          "auth_type": "Tipo di autenticazione (normalmente 2)",
+          "base_url": "URL base Cloud (es. https://example.azurewebsites.net)",
+          "device_id": "ID dispositivo",
+          "name": "Nome",
+          "password": "Password",
+          "scan_interval": "Intervallo di aggiornamento (secondi)",
+          "username": "Nome utente",
+          "verify_ssl": "Verifica certificato SSL"
         },
-        "description": "Scegli come connetterti a TechPoint.",
-        "title": "Aggiungi TechPoint"
+        "description": "Inserisci l'URL base Cloud API, l'ID dispositivo e le credenziali. L'integrazione si autenticherà tramite JWT e instraderà le chiamate all'API Web TechPoint standard.",
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Intervallo di aggiornamento (secondi)",
           "verify_ssl": "Verifica certificato SSL"
         },
-        "description": "Regola il polling, la verifica SSL e il raggruppamento dei dispositivi.\n\nURL webhook (copia/incolla in TechPoint):\n{webhook_url}\n\nEndpoint TechPoint: {tp_endpoint}\nAutenticazione: {auth_type}",
+        "description": "Regola il polling, la verifica SSL e il raggruppamento dei dispositivi.\n\nURL webhook (copia/incolla in Siedle Secure SC-600):\n{webhook_url}\n\nEndpoint Siedle Secure SC-600: {tp_endpoint}\nAutenticazione: {auth_type}",
         "title": "Opzioni TechPoint"
       }
     }

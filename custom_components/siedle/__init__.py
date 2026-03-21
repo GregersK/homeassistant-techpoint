@@ -70,7 +70,7 @@ async def _async_cleanup_orphan_devices(hass: HomeAssistant, entry: ConfigEntry)
             try:
                 device_registry.async_update_device(dev.id, name=rename_map[dev.name])
             except Exception:  # noqa: BLE001
-                _LOGGER.debug("TechPoint: could not rename device %s", dev.name, exc_info=True)
+                _LOGGER.debug("Siedle SC-600: could not rename device %s", dev.name, exc_info=True)
 
         # Never touch the controller device.
         if (DOMAIN, entry.entry_id) in (dev.identifiers or set()):
@@ -84,14 +84,14 @@ async def _async_cleanup_orphan_devices(hass: HomeAssistant, entry: ConfigEntry)
             device_registry.async_remove_device(dev.id)
             removed += 1
         except Exception:  # noqa: BLE001
-            _LOGGER.debug("TechPoint: could not remove device %s", dev.name, exc_info=True)
+            _LOGGER.debug("Siedle SC-600: could not remove device %s", dev.name, exc_info=True)
 
     if removed:
-        _LOGGER.info("TechPoint: removed %s orphan device(s)", removed)
+        _LOGGER.info("Siedle SC-600: removed %s orphan device(s)", removed)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up TechPoint from a config entry."""
+    """Set up Siedle Secure SC-600 from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     # Options override data when present
@@ -108,7 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception as err:  # noqa: BLE001
-        raise ConfigEntryNotReady(f"TechPoint: initial refresh failed: {err}") from err
+        raise ConfigEntryNotReady(f"Siedle SC-600: initial refresh failed: {err}") from err
 
     # Create controller device in registry (nice 'Shelly-like' UI)
     try:
@@ -140,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             configuration_url=cfg.get(CONF_BASE_URL),
         )
     except Exception:  # noqa: BLE001
-        _LOGGER.debug("TechPoint: could not create controller device entry", exc_info=True)
+        _LOGGER.debug("Siedle SC-600: could not create controller device entry", exc_info=True)
 
     hass.data[DOMAIN][entry.entry_id] = {
         "client": client,
@@ -180,7 +180,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if client is not None:
             await async_unload_realtime_events(hass, entry, client)
     except Exception:  # noqa: BLE001
-        _LOGGER.debug("TechPoint: error during webhook cleanup on unload", exc_info=True)
+        _LOGGER.debug("Siedle SC-600: error during webhook cleanup on unload", exc_info=True)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
@@ -194,11 +194,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await async_unregister_services(hass)
             hass.data[DOMAIN].pop("_services_registered", None)
         except Exception:  # noqa: BLE001
-            _LOGGER.debug("TechPoint: error unregistering services", exc_info=True)
+            _LOGGER.debug("Siedle SC-600: error unregistering services", exc_info=True)
 
         try:
             hass.data.pop(DOMAIN, None)
         except Exception:  # noqa: BLE001
-            _LOGGER.debug("TechPoint: error cleaning up hass.data", exc_info=True)
+            _LOGGER.debug("Siedle SC-600: error cleaning up hass.data", exc_info=True)
 
     return unload_ok

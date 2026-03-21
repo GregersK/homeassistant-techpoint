@@ -54,7 +54,6 @@ def _ensure_scheme(url: str, default_scheme: str = "https") -> str:
 
 
 def _normalize_lan_input(host_or_url: str) -> str:
-    # factory will append /api/v1; we only ensure scheme for unique id
     return _ensure_scheme(host_or_url).rstrip("/")
 
 
@@ -75,21 +74,21 @@ def _is_auth_error(err: Exception) -> bool:
 
 async def _probe(hass: HomeAssistant, base_url: str, data: Dict[str, Any]) -> None:
     client = create_client(hass, base_url, data)
-    # Prefer fast /info/api probe
     if hasattr(client, "get_api_info"):
         await client.get_api_info()
     else:
         await client.list_doors()
 
 
-class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class SiedleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     @staticmethod
-    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> "TechPointOptionsFlowHandler":
-        return TechPointOptionsFlowHandler(config_entry)
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> "SiedleOptionsFlowHandler":
+        return SiedleOptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input: Dict[str, Any] | None = None):
+        """First step: select connection mode (LAN or Cloud)."""
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
@@ -172,8 +171,8 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="cloud", data_schema=schema, errors=errors)
 
 
-class TechPointOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle TechPoint options."""
+class SiedleOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle Siedle SC-600 options."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         self._config_entry = config_entry
@@ -190,7 +189,6 @@ class TechPointOptionsFlowHandler(config_entries.OptionsFlow):
             vol.Optional(CONF_SCAN_INTERVAL, default=cur.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)): vol.Coerce(int),
             vol.Optional(CONF_VERIFY_SSL, default=cur.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL_LAN if cur.get(CONF_MODE) == MODE_LAN else DEFAULT_VERIFY_SSL_CLOUD)): bool,
             vol.Optional(CONF_DEVICE_GROUPING, default=cur.get(CONF_DEVICE_GROUPING, DEFAULT_DEVICE_GROUPING)): vol.In(DEVICE_GROUPINGS),
-            # Realtime events (LAN only). These are safe to show for cloud too; they will simply be ignored.
             vol.Optional(CONF_EVENTS_DOOR, default=cur.get(CONF_EVENTS_DOOR, False)): bool,
             vol.Optional(CONF_EVENTS_ALARM, default=cur.get(CONF_EVENTS_ALARM, False)): bool,
             vol.Optional(CONF_EVENTS_TAMPER, default=cur.get(CONF_EVENTS_TAMPER, False)): bool,

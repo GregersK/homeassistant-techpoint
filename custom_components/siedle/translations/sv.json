@@ -7,11 +7,11 @@
     },
     "step": {
       "user": {
-        "title": "Lägg till TechPoint",
-        "description": "Välj hur du ansluter till TechPoint.",
         "data": {
           "mode": "Anslutningstyp"
-        }
+        },
+        "description": "Välj hur du vill ansluta till TechPoint.",
+        "title": "Lägg till Siedle Secure SC-600"
       },
       "lan": {
         "data": {
@@ -24,7 +24,7 @@
           "verify_ssl": "Verifiera SSL-certifikat"
         },
         "description": "Ange bara IP/värd. Integrationen använder automatiskt /api/v1. Om styrenheten använder ett självsignerat certifikat, låt SSL-verifiering vara avstängd.",
-        "title": "LAN"
+        "title": "Siedle Secure SC-600 (LAN)"
       },
       "cloud": {
         "data": {
@@ -38,7 +38,7 @@
           "verify_ssl": "Verifiera SSL-certifikat"
         },
         "description": "Ange Cloud API-bas-URL, enhets-ID och inloggningsuppgifter. Integrationen autentiserar via JWT och vidarebefordrar anrop till det vanliga TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Siedle Secure SC-600 (Cloud)"
       }
     }
   },
@@ -83,7 +83,7 @@
           "scan_interval": "Uppdateringsintervall (sekunder)",
           "verify_ssl": "Verifiera SSL-certifikat"
         },
-        "description": "Justera polling, SSL-verifiering och enhetsgruppering.\n\nWebhook-URL (kopiera/klistra in i TechPoint):\n{webhook_url}\n\nTechPoint-slutpunkt: {tp_endpoint}\nAutentisering: {auth_type}",
+        "description": "Justera polling, SSL-verifiering och enhetsgruppering.\n\nWebhook-URL (kopiera/klistra in i Siedle Secure SC-600):\n{webhook_url}\n\nSiedle Secure SC-600-slutpunkt: {tp_endpoint}\nAutentisering: {auth_type}",
         "title": "TechPoint-inställningar"
       }
     }
