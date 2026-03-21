@@ -3,7 +3,7 @@
     "@GregersK"
   ],
   "config_flow": true,
-  "documentation": "https://app.swaggerhub.com/apis-docs/techsolutions.dk/tech-point-api/1",
+  "documentation": "https://github.com/GregersK/homeassistant-techpoint",
   "domain": "techpoint",
   "homeassistant": "2024.1.0",
   "integration_type": "device",
