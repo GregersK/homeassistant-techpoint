@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-03-21
+
+### Added
+- Faroese (fo), Ukrainian (uk) and Kalaallisut/Greenlandic (kl) translations
+
+### Fixed
+- Danish (da) translation: replaced English words with proper Danish equivalents (Auth type → Godkendelsestype, Device ID → Enheds-ID, Devices → Enheder, Realtime → Realtid, Eventlog → Hændelseslog, copy/paste → kopiér/indsæt)
+- Completed all previously partial translations (de, el, es, fi, is, it, nl, no, pl, sv) — only door mode states were translated before; all config flow, options and sensor strings are now fully translated
+
 ## [0.5.0] - 2026-03-21
 
 ### Changed
