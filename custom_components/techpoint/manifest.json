@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/GregersK/homeassistant-techpoint",
   "domain": "techpoint",
-  "homeassistant": "2024.1.0",
+  "homeassistant": "2026.3.0",
   "integration_type": "device",
   "iot_class": "local_polling",
   "loggers": [
