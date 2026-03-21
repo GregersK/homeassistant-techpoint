@@ -154,9 +154,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Reload integration when options change (ensures webhook reconfigured)
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-
     # Register services
     from .services import async_register_services
 
@@ -167,7 +164,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Cleanup of legacy devices (old per-door/per-zone devices)
     hass.async_create_task(_async_cleanup_orphan_devices(hass, entry))
 
-    # Reload integration when options change (also updates webhook filtering)
+    # Reload integration when options change (ensures webhook reconfigured)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     return True
@@ -181,7 +178,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if client is not None:
             await async_unload_realtime_events(hass, entry, client)
     except Exception:  # noqa: BLE001
-        pass
+        _LOGGER.debug("TechPoint: error during webhook cleanup on unload", exc_info=True)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
@@ -195,11 +192,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await async_unregister_services(hass)
             hass.data[DOMAIN].pop("_services_registered", None)
         except Exception:  # noqa: BLE001
-            pass
+            _LOGGER.debug("TechPoint: error unregistering services", exc_info=True)
 
         try:
             hass.data.pop(DOMAIN, None)
         except Exception:  # noqa: BLE001
-            pass
+            _LOGGER.debug("TechPoint: error cleaning up hass.data", exc_info=True)
 
     return unload_ok

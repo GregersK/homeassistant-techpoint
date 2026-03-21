@@ -31,7 +31,8 @@ async def async_get_config_entry_diagnostics(
 
     data = (hass.data.get(DOMAIN) or {}).get(entry.entry_id) or {}
 
-    cfg = (data.get("cfg") or {}).copy()
+    # "cfg" is stored by webhook setup (LAN mode); fall back to entry data for cloud mode.
+    cfg = (data.get("cfg") or {**entry.data, **(entry.options or {})}).copy()
     cfg = redact_data(cfg, REDACT_KEYS)
 
     event_log = data.get("event_log") or []

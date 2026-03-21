@@ -119,7 +119,7 @@ class LanApiClient(BaseApiClient):
                         js_err = None
                     detail = js_err or txt
                     raise RuntimeError(
-                        f"LAN API fejl: {resp.status}, message={detail}, url='{url}'"
+                        f"LAN API error: {resp.status}, message={detail}, url='{url}'"
                     )
                 ctype = resp.headers.get("Content-Type", "")
                 if "json" in ctype:
@@ -130,7 +130,7 @@ class LanApiClient(BaseApiClient):
         except asyncio.TimeoutError as e:
             raise RuntimeError("LAN API timeout") from e
         except ClientError as e:
-            raise RuntimeError(f"LAN API fejl: {e}") from e
+            raise RuntimeError(f"LAN API error: {e}") from e
 
     # ---------- Doors ----------
     async def list_doors(self) -> List[Dict[str, Any]]:

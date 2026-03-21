@@ -83,7 +83,7 @@ class CloudApiClient(LanApiClient):
 
                     if resp.status >= 400:
                         detail = js or txt
-                        raise RuntimeError(f"Cloud auth fejl: {resp.status}, message={detail}, url='{url}'")
+                        raise RuntimeError(f"Cloud auth error: {resp.status}, message={detail}, url='{url}'")
 
                     if not isinstance(js, dict):
                         raise RuntimeError(f"Cloud auth: unexpected response: {txt}")
@@ -93,8 +93,8 @@ class CloudApiClient(LanApiClient):
                         # If device is offline, Cloud returns OK but jwtToken=null
                         is_online = js.get("isDeviceOnline")
                         raise RuntimeError(
-                            f"Cloud auth: jwtToken mangler (isDeviceOnline={is_online}). "
-                            "Tjek deviceId og at enheden er online."
+                            f"Cloud auth: jwtToken missing (isDeviceOnline={is_online}). "
+                            "Check deviceId and that the device is online."
                         )
 
                     self._token = str(token)
@@ -102,7 +102,7 @@ class CloudApiClient(LanApiClient):
             except asyncio.TimeoutError as e:
                 raise RuntimeError("Cloud auth timeout") from e
             except ClientError as e:
-                raise RuntimeError(f"Cloud auth fejl: {e}") from e
+                raise RuntimeError(f"Cloud auth error: {e}") from e
 
     async def _ensure_token(self) -> None:
         if self._token:
@@ -152,7 +152,7 @@ class CloudApiClient(LanApiClient):
                         js_err = None
                     detail = js_err or txt
                     raise RuntimeError(
-                        f"Cloud API fejl: {resp.status}, message={detail}, url='{url}'"
+                        f"Cloud API error: {resp.status}, message={detail}, url='{url}'"
                     )
 
                 ctype = resp.headers.get("Content-Type", "")
@@ -166,7 +166,7 @@ class CloudApiClient(LanApiClient):
         except asyncio.TimeoutError as e:
             raise RuntimeError("Cloud API timeout") from e
         except ClientError as e:
-            raise RuntimeError(f"Cloud API fejl: {e}") from e
+            raise RuntimeError(f"Cloud API error: {e}") from e
 
     async def get_api_info(self) -> Any:
         """Return API version info (GET /info/api)."""
