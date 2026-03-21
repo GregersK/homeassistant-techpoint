@@ -8,21 +8,21 @@
     "step": {
       "cloud": {
         "data": {
-          "auth_type": "Auth type (normalt 2)",
-          "base_url": "Cloud base URL (fx https://example.azurewebsites.net)",
-          "device_id": "Device ID",
+          "auth_type": "Godkendelsestype (normalt 2)",
+          "base_url": "Cloud basis-URL (f.eks. https://example.azurewebsites.net)",
+          "device_id": "Enheds-ID",
           "name": "Navn",
           "password": "Adgangskode",
           "scan_interval": "Opdateringsinterval (sekunder)",
           "username": "Brugernavn",
           "verify_ssl": "Verificér SSL-certifikat"
         },
-        "description": "Indtast din Cloud API base URL, device id og bruger/kode. Integrationen autentificerer med JWT og proxy'er kald til den normale TechPoint Web API.",
+        "description": "Indtast din Cloud API basis-URL, enheds-id og bruger/kode. Integrationen autentificerer med JWT og proxy'er kald til den normale TechPoint Web API.",
         "title": "TechPoint (Cloud)"
       },
       "lan": {
         "data": {
-          "base_url": "IP/host (fx 10.0.0.5)",
+          "base_url": "IP/host (f.eks. 10.0.0.5)",
           "lan_password": "Adgangskode",
           "lan_token": "Bearer-token (valgfri)",
           "lan_username": "Brugernavn",
@@ -57,7 +57,7 @@
     },
     "sensor": {
       "event_log": {
-        "name": "Eventlog"
+        "name": "Hændelseslog"
       },
       "event_log_line": {
         "name": "Seneste hændelse"
@@ -66,7 +66,7 @@
         "name": "Seneste hændelse"
       },
       "webhook_url": {
-        "name": "Webhook URL"
+        "name": "Webhook-URL"
       }
     }
   },
@@ -74,16 +74,16 @@
     "step": {
       "init": {
         "data": {
-          "device_grouping": "Enhedsgruppering (Devices)",
-          "event_log_max": "Eventlog størrelse (antal linjer)",
-          "events_alarm": "Realtime: Alarm til/fra-kobling",
-          "events_door": "Realtime: Dør/adgang-hændelser",
-          "events_error": "Realtime: Fejl/alarmer",
-          "events_tamper": "Realtime: Tamper/sabotage",
+          "device_grouping": "Enhedsgruppering (Enheder)",
+          "event_log_max": "Hændelseslog størrelse (antal linjer)",
+          "events_alarm": "Realtid: Alarm til/fra-kobling",
+          "events_door": "Realtid: Dør/adgang-hændelser",
+          "events_error": "Realtid: Fejl/alarmer",
+          "events_tamper": "Realtid: Sabotage/manipulation",
           "scan_interval": "Opdateringsinterval (sekunder)",
           "verify_ssl": "Verificér SSL-certifikat"
         },
-        "description": "Justér polling, SSL og hvordan enheder grupperes under Devices.\n\nWebhook URL (copy/paste ind i TechPoint):\n{webhook_url}\n\nTechPoint endpoint: {tp_endpoint}\nAutentificering: {auth_type}",
+        "description": "Justér polling, SSL og hvordan enheder grupperes under Enheder.\n\nWebhook-URL (kopiér/indsæt i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nGodkendelse: {auth_type}",
         "title": "TechPoint indstillinger"
       }
     }

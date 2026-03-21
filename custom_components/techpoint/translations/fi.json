@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Tunnistautuminen epäonnistui",
+      "cannot_connect": "Yhteyden muodostaminen epäonnistui",
+      "unknown": "Odottamaton virhe"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Todennustyyppi (yleensä 2)",
+          "base_url": "Cloud-pohja-URL (esim. https://example.azurewebsites.net)",
+          "device_id": "Laitetunnus",
+          "name": "Nimi",
+          "password": "Salasana",
+          "scan_interval": "Päivitysväli (sekuntia)",
+          "username": "Käyttäjänimi",
+          "verify_ssl": "Tarkista SSL-sertifikaatti"
+        },
+        "description": "Anna Cloud API:n pohja-URL, laitetunnus ja tunnistetiedot. Integraatio todentaa JWT:llä ja välittää kutsut tavalliselle TechPoint Web API:lle.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/isäntä (esim. 10.0.0.5)",
+          "lan_password": "Salasana",
+          "lan_token": "Bearer-tunnus (valinnainen)",
+          "lan_username": "Käyttäjänimi",
+          "name": "Nimi",
+          "scan_interval": "Päivitysväli (sekuntia)",
+          "verify_ssl": "Tarkista SSL-sertifikaatti"
+        },
+        "description": "Anna vain IP/isäntä. Integraatio käyttää automaattisesti /api/v1. Jos ohjain käyttää itse allekirjoitettua sertifikaattia, jätä SSL-tarkistus pois käytöstä.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Yhteystyyppi"
+        },
+        "description": "Valitse, miten yhdistät TechPointiin.",
+        "title": "Lisää TechPoint"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Oven tila",
         "state": {
+          "block": "Estetty",
           "normal": "Normaali",
-          "release": "Vapautettu",
           "permanent_release": "Pysyvästi vapautettu",
-          "secure": "Lukittu",
-          "block": "Estetty"
+          "release": "Vapautettu",
+          "secure": "Lukittu"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Tapahtumaloki"
+      },
+      "event_log_line": {
+        "name": "Viimeisin tapahtuma"
+      },
+      "last_event": {
+        "name": "Viimeisin tapahtuma"
+      },
+      "webhook_url": {
+        "name": "Webhook-URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Laitteiden ryhmittely",
+          "event_log_max": "Tapahtumalokion koko (merkintöjen määrä)",
+          "events_alarm": "Reaaliaikainen: Hälytyksen kytkentä-/poistotapahtumat",
+          "events_door": "Reaaliaikainen: Ovi-/pääsytapahtumat",
+          "events_error": "Reaaliaikainen: Virhe-/vikatapahtumat",
+          "events_tamper": "Reaaliaikainen: Peukalointi-/sabotaasitapahtumat",
+          "scan_interval": "Päivitysväli (sekuntia)",
+          "verify_ssl": "Tarkista SSL-sertifikaatti"
+        },
+        "description": "Säädä kyselyä, SSL-tarkistusta ja laitteiden ryhmittelyä.\n\nWebhook-URL (kopioi/liitä TechPointiin):\n{webhook_url}\n\nTechPoint-päätepiste: {tp_endpoint}\nTodennus: {auth_type}",
+        "title": "TechPoint-asetukset"
       }
     }
   }

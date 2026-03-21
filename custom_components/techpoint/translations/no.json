@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Autentisering mislyktes",
+      "cannot_connect": "Tilkobling mislyktes",
+      "unknown": "Uventet feil"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Autentiseringstype (vanligvis 2)",
+          "base_url": "Cloud-basis-URL (f.eks. https://example.azurewebsites.net)",
+          "device_id": "Enhets-ID",
+          "name": "Navn",
+          "password": "Passord",
+          "scan_interval": "Oppdateringsintervall (sekunder)",
+          "username": "Brukernavn",
+          "verify_ssl": "Bekreft SSL-sertifikat"
+        },
+        "description": "Skriv inn Cloud API-basis-URL, enhets-ID og påloggingsinformasjon. Integrasjonen autentiserer via JWT og videresender anrop til den vanlige TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/vert (f.eks. 10.0.0.5)",
+          "lan_password": "Passord",
+          "lan_token": "Bearer-token (valgfritt)",
+          "lan_username": "Brukernavn",
+          "name": "Navn",
+          "scan_interval": "Oppdateringsintervall (sekunder)",
+          "verify_ssl": "Bekreft SSL-sertifikat"
+        },
+        "description": "Skriv bare inn IP/vert. Integrasjonen bruker automatisk /api/v1. Hvis kontrolleren bruker et selvsignert sertifikat, la SSL-bekreftelse stå av.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Tilkoblingstype"
+        },
+        "description": "Velg hvordan du vil koble til TechPoint.",
+        "title": "Legg til TechPoint"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Dørmodus",
         "state": {
+          "block": "Blokkert",
           "normal": "Normal",
-          "release": "Frigitt",
           "permanent_release": "Permanent frigitt",
-          "secure": "Sikret",
-          "block": "Blokkert"
+          "release": "Frigitt",
+          "secure": "Sikret"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Hendelseslogg"
+      },
+      "event_log_line": {
+        "name": "Siste hendelse"
+      },
+      "last_event": {
+        "name": "Siste hendelse"
+      },
+      "webhook_url": {
+        "name": "Webhook-URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Enhetsgruppering",
+          "event_log_max": "Hendelsesloggstørrelse (antall oppføringer)",
+          "events_alarm": "Sanntid: Alarm på/av-hendelser",
+          "events_door": "Sanntid: Dør-/adgangshendelser",
+          "events_error": "Sanntid: Feil-/alarmeringshendelser",
+          "events_tamper": "Sanntid: Manipulerings-/sabotasjehendelser",
+          "scan_interval": "Oppdateringsintervall (sekunder)",
+          "verify_ssl": "Bekreft SSL-sertifikat"
+        },
+        "description": "Juster polling, SSL-bekreftelse og enhetsgruppering.\n\nWebhook-URL (kopier/lim inn i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nAutentisering: {auth_type}",
+        "title": "TechPoint-innstillinger"
       }
     }
   }

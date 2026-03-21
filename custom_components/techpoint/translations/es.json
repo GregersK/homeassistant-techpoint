@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Error de autenticación",
+      "cannot_connect": "No se pudo conectar",
+      "unknown": "Error inesperado"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Tipo de autenticación (normalmente 2)",
+          "base_url": "URL base de Cloud (p.ej. https://example.azurewebsites.net)",
+          "device_id": "ID de dispositivo",
+          "name": "Nombre",
+          "password": "Contraseña",
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "username": "Nombre de usuario",
+          "verify_ssl": "Verificar certificado SSL"
+        },
+        "description": "Introduzca la URL base de Cloud API, el ID de dispositivo y las credenciales. La integración se autenticará mediante JWT y redirigirá las llamadas a la API web normal de TechPoint.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/host (p.ej. 10.0.0.5)",
+          "lan_password": "Contraseña",
+          "lan_token": "Bearer token (opcional)",
+          "lan_username": "Nombre de usuario",
+          "name": "Nombre",
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "verify_ssl": "Verificar certificado SSL"
+        },
+        "description": "Introduzca solo la IP/host. La integración usará automáticamente /api/v1. Si su controlador usa un certificado autofirmado, desactive la verificación SSL.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Tipo de conexión"
+        },
+        "description": "Elija cómo conectarse a TechPoint.",
+        "title": "Añadir TechPoint"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Modo de puerta",
         "state": {
+          "block": "Bloqueado",
           "normal": "Normal",
-          "release": "Liberado",
           "permanent_release": "Liberación permanente",
-          "secure": "Asegurado",
-          "block": "Bloqueado"
+          "release": "Liberado",
+          "secure": "Asegurado"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Registro de eventos"
+      },
+      "event_log_line": {
+        "name": "Último evento"
+      },
+      "last_event": {
+        "name": "Último evento"
+      },
+      "webhook_url": {
+        "name": "URL de webhook"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Agrupación de dispositivos",
+          "event_log_max": "Tamaño del registro de eventos (número de entradas)",
+          "events_alarm": "Tiempo real: Eventos de activación/desactivación de alarma",
+          "events_door": "Tiempo real: Eventos de puerta/acceso",
+          "events_error": "Tiempo real: Eventos de error/fallo",
+          "events_tamper": "Tiempo real: Eventos de manipulación/sabotaje",
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "verify_ssl": "Verificar certificado SSL"
+        },
+        "description": "Ajuste el sondeo, la verificación SSL y la agrupación de dispositivos.\n\nURL de webhook (copiar/pegar en TechPoint):\n{webhook_url}\n\nEndpoint de TechPoint: {tp_endpoint}\nAutenticación: {auth_type}",
+        "title": "Opciones de TechPoint"
       }
     }
   }
