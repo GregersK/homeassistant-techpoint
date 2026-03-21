@@ -18,7 +18,7 @@
           "verify_ssl": "SSL-Zertifikat überprüfen"
         },
         "description": "Geben Sie Ihre Cloud-API-Basis-URL, Geräte-ID und Anmeldedaten ein. Die Integration authentifiziert sich über JWT und leitet Anfragen an die reguläre TechPoint Web API weiter.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "SSL-Zertifikat überprüfen"
         },
         "description": "Geben Sie nur die IP/den Host ein. Die Integration verwendet automatisch /api/v1. Wenn Ihr Controller ein selbstsigniertes Zertifikat verwendet, lassen Sie die SSL-Überprüfung deaktiviert.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Marke auswählen",
+        "description": "Wählen Sie die Marke Ihres Zugangscontrollers.",
+        "data": {
+          "brand": "Controller-Marke"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Verbindungstyp"
         },

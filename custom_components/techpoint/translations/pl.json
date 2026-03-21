@@ -18,7 +18,7 @@
           "verify_ssl": "Weryfikuj certyfikat SSL"
         },
         "description": "Wprowadź podstawowy URL Cloud API, ID urządzenia i dane uwierzytelniające. Integracja uwierzytelni się przez JWT i przekieruje wywołania do standardowego TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "Weryfikuj certyfikat SSL"
         },
         "description": "Wprowadź tylko IP/host. Integracja automatycznie użyje /api/v1. Jeśli kontroler używa certyfikatu z własnym podpisem, pozostaw wyłączoną weryfikację SSL.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Wybierz markę",
+        "description": "Wybierz markę swojego kontrolera dostępu.",
+        "data": {
+          "brand": "Marka kontrolera"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Typ połączenia"
         },

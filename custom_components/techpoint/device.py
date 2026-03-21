@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
 from homeassistant.helpers.device_registry import DeviceInfo
 
@@ -21,6 +21,19 @@ class DeviceContext:
 
     entry_id: str
     controller_name: str
+    manufacturer: str = MANUFACTURER
+    model_controller: str = MODEL_CONTROLLER
+
+
+def make_device_context(hass: Any, entry_id: str, controller_name: str) -> DeviceContext:
+    """Build a DeviceContext from hass.data, picking up brand-specific metadata."""
+    data = (hass.data.get(DOMAIN) or {}).get(entry_id) or {}
+    return DeviceContext(
+        entry_id=entry_id,
+        controller_name=controller_name,
+        manufacturer=data.get("manufacturer", MANUFACTURER),
+        model_controller=data.get("model_controller", MODEL_CONTROLLER),
+    )
 
 
 def build_device_info(
@@ -43,27 +56,27 @@ def build_device_info(
     kind_low = kind.lower()
     if kind_low in ("door", "doors"):
         singular, plural = "door", "doors"
-        model_item = f"{MODEL_CONTROLLER} Door"
-        model_group = f"{MODEL_CONTROLLER} Doors"
+        model_item = f"{ctx.model_controller} Door"
+        model_group = f"{ctx.model_controller} Doors"
         group_name = f"{ctx.controller_name} - Døre"
         item_prefix = "Dør"
     elif kind_low in ("zone", "zones"):
         singular, plural = "zone", "zones"
-        model_item = f"{MODEL_CONTROLLER} Zone"
-        model_group = f"{MODEL_CONTROLLER} Zones"
+        model_item = f"{ctx.model_controller} Zone"
+        model_group = f"{ctx.model_controller} Zones"
         group_name = f"{ctx.controller_name} - Zoner"
         item_prefix = "Zone"
     elif kind_low in ("area", "areas"):
         singular, plural = "area", "areas"
-        model_item = f"{MODEL_CONTROLLER} Area"
-        model_group = f"{MODEL_CONTROLLER} Areas"
+        model_item = f"{ctx.model_controller} Area"
+        model_group = f"{ctx.model_controller} Areas"
         group_name = f"{ctx.controller_name} - Områder"
         item_prefix = "Area"
     else:
         # Fallback: treat as grouped type
         singular, plural = kind_low, f"{kind_low}s"
-        model_item = f"{MODEL_CONTROLLER} {kind_low.title()}"
-        model_group = f"{MODEL_CONTROLLER} {plural.title()}"
+        model_item = f"{ctx.model_controller} {kind_low.title()}"
+        model_group = f"{ctx.model_controller} {plural.title()}"
         group_name = f"{ctx.controller_name} - {plural.title()}"
         item_prefix = kind_low.title()
 
@@ -81,7 +94,7 @@ def build_device_info(
         return DeviceInfo(
             identifiers={(DOMAIN, identifier)},
             name=name,
-            manufacturer=MANUFACTURER,
+            manufacturer=ctx.manufacturer,
             model=model_item,
             via_device=(DOMAIN, ctx.entry_id),
         )
@@ -90,7 +103,7 @@ def build_device_info(
     return DeviceInfo(
         identifiers={(DOMAIN, f"{ctx.entry_id}_{plural}")},
         name=group_name,
-        manufacturer=MANUFACTURER,
+        manufacturer=ctx.manufacturer,
         model=model_group,
         via_device=(DOMAIN, ctx.entry_id),
     )

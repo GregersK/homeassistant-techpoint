@@ -18,7 +18,7 @@
           "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
         },
         "description": "Cloud API kissarissaarsinnaanissaminnik URL, suliaq nalunaarusiorfigineqarsinnaasumik nalunaarusiorfissatik atorlugit. Integrationimi JWT atorlugu atugarissaarneq atorneqarsinnaapput TechPoint Web API-imut.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "SSL-nalunaarusiorfik nalunaarissaarneq"
         },
         "description": "IP/sullissivissumik kissarissaarsinnaanissaminnik nalunaarusiorfik atorlugit. Integrationimi /api/v1 nammineq atorneqarsinnaapput. Sullissivissumik nalunaarusiorfissaminnik atorsinnaasumik atorluguni, SSL nalunaarissaarneq atorneqarsinnaanngikkaluarluni.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Merki tigumissaaruk",
+        "description": "Atugassarititaasoq nalunaarusiorfigineqarsinnaasumik merki tigumissaaruk.",
+        "data": {
+          "brand": "Nalunaarusiorfik merki"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Kissaatigineq sumiiffillu"
         },

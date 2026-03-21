@@ -18,7 +18,7 @@
           "verify_ssl": "Staðfesta SSL-skírteini"
         },
         "description": "Sláðu inn Cloud API grunnslóð, tækjaauðkenni og innskráningarupplýsingar. Samþætting mun auðkenna með JWT og senda beiðnir á venjulegt TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "Staðfesta SSL-skírteini"
         },
         "description": "Sláðu aðeins inn IP/hýsil. Samþætting mun sjálfkrafa nota /api/v1. Ef stjórnandi þinn notar sjálfundirritað skírteini, skaltu slökkva á SSL-staðfestingu.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Veldu vörumerki",
+        "description": "Veldu vörumerki aðgangsstýringarinnar þínar.",
+        "data": {
+          "brand": "Vörumerki stýringarinnar"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Tengingargerð"
         },

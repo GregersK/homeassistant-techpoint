@@ -18,7 +18,7 @@
           "verify_ssl": "Staðfesta SSL-skjalið"
         },
         "description": "Skriva Cloud API basis-URL, tæki-ID og innritanarfrágreiðing. Samstyktin innritar við JWT og sendur boð til vanliga TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "Staðfesta SSL-skjalið"
         },
         "description": "Skriva bert IP/vert. Samstyktin nýtir sjálvvirkið /api/v1. Um stjórnarin nýtir eitt sjálvundirritat skjal, lat SSL-staðfesting vera av.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Vel merki",
+        "description": "Vel merki á atgongustýringini hjá tær.",
+        "data": {
+          "brand": "Merki á stjórnaranum"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Sambandslag"
         },

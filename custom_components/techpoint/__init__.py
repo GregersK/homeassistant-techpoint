@@ -11,7 +11,10 @@ from homeassistant.helpers import entity_registry as er
 
 from .api.factory import create_client
 from .const import (
+    BRAND_META,
+    BRAND_TECHPOINT,
     CONF_BASE_URL,
+    CONF_BRAND,
     CONF_DEVICE_GROUPING,
     CONF_NAME,
     CONF_SCAN_INTERVAL,
@@ -97,6 +100,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Options override data when present
     cfg = {**entry.data, **(entry.options or {})}
 
+    # Resolve brand metadata
+    brand = cfg.get(CONF_BRAND, BRAND_TECHPOINT)
+    brand_info = BRAND_META.get(brand, BRAND_META[BRAND_TECHPOINT])
+    manufacturer = brand_info["manufacturer"]
+    model_controller = brand_info["model"]
+
     client = create_client(hass, cfg[CONF_BASE_URL], cfg)
     coordinator = TechPointCoordinator(
         hass,
@@ -133,9 +142,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         device_registry.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, entry.entry_id)},
-            name=cfg.get(CONF_NAME, DEFAULT_NAME),
-            manufacturer=MANUFACTURER,
-            model=MODEL_CONTROLLER,
+            name=cfg.get(CONF_NAME, brand_info["default_name"]),
+            manufacturer=manufacturer,
+            model=model_controller,
             sw_version=sw_version,
             configuration_url=cfg.get(CONF_BASE_URL),
         )
@@ -147,6 +156,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "coordinator": coordinator,
         "controller_identifier": (DOMAIN, entry.entry_id),
         "device_grouping": cfg.get(CONF_DEVICE_GROUPING, DEFAULT_DEVICE_GROUPING),
+        "manufacturer": manufacturer,
+        "model_controller": model_controller,
     }
 
     # Real-time events via TechPoint WebHook (LAN only)

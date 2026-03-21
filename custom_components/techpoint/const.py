@@ -4,7 +4,27 @@ from homeassistant.const import Platform
 
 DOMAIN = "techpoint"
 
-# Device metadata (used for device registry entries)
+# Brand selection
+CONF_BRAND = "brand"
+BRAND_TECHPOINT = "techpoint"
+BRAND_SIEDLE = "siedle"
+BRANDS = [BRAND_TECHPOINT, BRAND_SIEDLE]
+
+# Per-brand device metadata
+BRAND_META: dict[str, dict] = {
+    BRAND_TECHPOINT: {
+        "manufacturer": "TechSolutions",
+        "model": "TechPoint",
+        "default_name": "TechPoint",
+    },
+    BRAND_SIEDLE: {
+        "manufacturer": "Siedle",
+        "model": "SC-600",
+        "default_name": "Siedle SC-600",
+    },
+}
+
+# Device metadata fallback (TechPoint defaults – kept for import compatibility)
 MANUFACTURER = "TechSolutions"
 MODEL_CONTROLLER = "TechPoint"
 
@@ -36,7 +56,7 @@ GROUP_BY_ITEM = "item"
 DEVICE_GROUPINGS = [GROUP_BY_TYPE, GROUP_BY_ITEM]
 DEFAULT_DEVICE_GROUPING = GROUP_BY_TYPE
 
-DEFAULT_NAME = "TechPoint"
+DEFAULT_NAME = "TechPoint"  # fallback; brand-specific default used when brand is known
 DEFAULT_SCAN_INTERVAL = 10
 
 # Default SSL settings:

@@ -10,7 +10,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import DeviceContext, build_device_info
+from .device import make_device_context, build_device_info
 from .util import find_by_id, normalize_id
 
 
@@ -57,7 +57,7 @@ class TechPointDoorLock(CoordinatorEntity, LockEntity):
     @property
     def device_info(self) -> DeviceInfo:
         grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
-        ctx = DeviceContext(entry_id=self._entry_id, controller_name=self.coordinator.name)
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
         door = self._current() or {}
         base = door.get("name") or f"{self._door_id}"
         return build_device_info(ctx, grouping, "door", item_id=self._door_id, item_name=str(base))

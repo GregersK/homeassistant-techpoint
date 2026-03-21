@@ -18,7 +18,7 @@
           "verify_ssl": "SSL-certificaat verifiëren"
         },
         "description": "Voer de Cloud API basis-URL, het apparaat-ID en de inloggegevens in. De integratie authenticeert via JWT en stuurt aanroepen door naar de normale TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "SSL-certificaat verifiëren"
         },
         "description": "Voer alleen het IP/de host in. De integratie gebruikt automatisch /api/v1. Als uw controller een zelfondertekend certificaat gebruikt, laat SSL-verificatie dan uitgeschakeld.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN-verbinding"
       },
       "user": {
+        "title": "Selecteer merk",
+        "description": "Kies het merk van uw toegangscontroller.",
+        "data": {
+          "brand": "Controller-merk"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Verbindingstype"
         },

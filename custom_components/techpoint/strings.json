@@ -2,14 +2,21 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add TechPoint",
-        "description": "Choose how you connect to TechPoint.",
+        "title": "Select brand",
+        "description": "Choose the brand of your access controller.",
+        "data": {
+          "brand": "Controller brand"
+        }
+      },
+      "mode": {
+        "title": "Connection type",
+        "description": "Choose how you connect to the controller.",
         "data": {
           "mode": "Connection type"
         }
       },
       "lan": {
-        "title": "TechPoint (LAN)",
+        "title": "LAN connection",
         "description": "Enter only the IP/host. The integration will automatically use /api/v1. If your controller uses a self-signed certificate, keep SSL verify off.",
         "data": {
           "base_url": "IP/host (e.g. 10.0.0.5)",
@@ -22,8 +29,8 @@
         }
       },
       "cloud": {
-        "title": "TechPoint (Cloud)",
-        "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the regular TechPoint Web API.",
+        "title": "Cloud connection",
+        "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the controller's Web API.",
         "data": {
           "base_url": "Cloud base URL (e.g. https://example.azurewebsites.net)",
           "device_id": "Device ID",

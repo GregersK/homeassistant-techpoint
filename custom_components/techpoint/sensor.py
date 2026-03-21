@@ -12,7 +12,7 @@ from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, SIGNAL_EVENT_LOG_UPDATED
 from .coordinator import TechPointCoordinator
-from .device import DeviceContext, build_device_info
+from .device import make_device_context, build_device_info
 from .util import find_by_id, normalize_id
 
 
@@ -93,7 +93,7 @@ class TechPointDoorStatusSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        ctx = DeviceContext(entry_id=self._entry_id, controller_name=self._controller_name)
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self._controller_name)
         return build_device_info(
             ctx,
             self._grouping,

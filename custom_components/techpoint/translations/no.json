@@ -18,7 +18,7 @@
           "verify_ssl": "Bekreft SSL-sertifikat"
         },
         "description": "Skriv inn Cloud API-basis-URL, enhets-ID og påloggingsinformasjon. Integrasjonen autentiserer via JWT og videresender anrop til den vanlige TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "Bekreft SSL-sertifikat"
         },
         "description": "Skriv bare inn IP/vert. Integrasjonen bruker automatisk /api/v1. Hvis kontrolleren bruker et selvsignert sertifikat, la SSL-bekreftelse stå av.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Velg merke",
+        "description": "Velg merket på tilgangskontrollen din.",
+        "data": {
+          "brand": "Kontroller-merke"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Tilkoblingstype"
         },

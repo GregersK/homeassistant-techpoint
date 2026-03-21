@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from .const import (
     CONF_AUTH_TYPE,
     CONF_BASE_URL,
+    CONF_BRAND,
     CONF_DEVICE_ID,
     CONF_LAN_PASSWORD,
     CONF_LAN_TOKEN,
@@ -34,6 +35,8 @@ from .const import (
     CONF_EVENTS_TAMPER,
     CONF_EVENTS_ERROR,
     DOMAIN,
+    BRAND_TECHPOINT,
+    BRAND_META,
     MODE_CLOUD,
     MODE_LAN,
     MODES,
@@ -85,14 +88,34 @@ async def _probe(hass: HomeAssistant, base_url: str, data: Dict[str, Any]) -> No
 class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
+    def __init__(self) -> None:
+        self._brand: str = BRAND_TECHPOINT
+
     @staticmethod
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> "TechPointOptionsFlowHandler":
         return TechPointOptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input: Dict[str, Any] | None = None):
+        """First step: select brand (TechPoint or Siedle SC-600)."""
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
+                data_schema=vol.Schema({
+                    vol.Required(CONF_BRAND, default=BRAND_TECHPOINT): vol.In({
+                        "techpoint": "TechPoint",
+                        "siedle": "Siedle Secure SC-600",
+                    }),
+                }),
+            )
+
+        self._brand = user_input[CONF_BRAND]
+        return await self.async_step_mode()
+
+    async def async_step_mode(self, user_input: Dict[str, Any] | None = None):
+        """Second step: select connection mode (LAN or Cloud)."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="mode",
                 data_schema=vol.Schema({
                     vol.Required(CONF_MODE, default=MODE_LAN): vol.In(MODES)
                 }),
@@ -105,6 +128,7 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_lan(self, user_input: Dict[str, Any] | None = None):
         errors: Dict[str, str] = {}
+        brand_default_name = BRAND_META.get(self._brand, BRAND_META["techpoint"])["default_name"]
 
         if user_input is not None:
             base_url_raw = user_input[CONF_BASE_URL]
@@ -115,18 +139,19 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             data = dict(user_input)
             data[CONF_MODE] = MODE_LAN
+            data[CONF_BRAND] = self._brand
 
             try:
                 await _probe(self.hass, base_url_raw, data)
             except Exception as err:  # noqa: BLE001
                 errors["base"] = "auth" if _is_auth_error(err) else "cannot_connect"
             else:
-                title = data.get(CONF_NAME) or DEFAULT_NAME
+                title = data.get(CONF_NAME) or brand_default_name
                 return self.async_create_entry(title=title, data=data)
 
         schema = vol.Schema({
             vol.Required(CONF_BASE_URL): str,
-            vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
+            vol.Optional(CONF_NAME, default=brand_default_name): str,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.Coerce(int),
             vol.Optional(CONF_VERIFY_SSL, default=DEFAULT_VERIFY_SSL_LAN): bool,
             vol.Optional(CONF_LAN_USERNAME): str,
@@ -138,6 +163,7 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_cloud(self, user_input: Dict[str, Any] | None = None):
         errors: Dict[str, str] = {}
+        brand_default_name = BRAND_META.get(self._brand, BRAND_META["techpoint"])["default_name"]
 
         if user_input is not None:
             cloud_root = _normalize_cloud_input(user_input[CONF_BASE_URL])
@@ -149,13 +175,14 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data = dict(user_input)
             data[CONF_MODE] = MODE_CLOUD
             data[CONF_BASE_URL] = cloud_root
+            data[CONF_BRAND] = self._brand
 
             try:
                 await _probe(self.hass, cloud_root, data)
             except Exception as err:  # noqa: BLE001
                 errors["base"] = "auth" if _is_auth_error(err) else "cannot_connect"
             else:
-                title = data.get(CONF_NAME) or DEFAULT_NAME
+                title = data.get(CONF_NAME) or brand_default_name
                 return self.async_create_entry(title=title, data=data)
 
         schema = vol.Schema({
@@ -164,7 +191,7 @@ class TechPointConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_USERNAME): str,
             vol.Required(CONF_PASSWORD): str,
             vol.Optional(CONF_AUTH_TYPE, default=DEFAULT_AUTH_TYPE): vol.Coerce(int),
-            vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
+            vol.Optional(CONF_NAME, default=brand_default_name): str,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.Coerce(int),
             vol.Optional(CONF_VERIFY_SSL, default=DEFAULT_VERIFY_SSL_CLOUD): bool,
         })

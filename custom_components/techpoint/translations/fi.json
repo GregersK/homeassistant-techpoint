@@ -18,7 +18,7 @@
           "verify_ssl": "Tarkista SSL-sertifikaatti"
         },
         "description": "Anna Cloud API:n pohja-URL, laitetunnus ja tunnistetiedot. Integraatio todentaa JWT:llä ja välittää kutsut tavalliselle TechPoint Web API:lle.",
-        "title": "TechPoint (Cloud)"
+        "title": "Cloud"
       },
       "lan": {
         "data": {
@@ -31,9 +31,16 @@
           "verify_ssl": "Tarkista SSL-sertifikaatti"
         },
         "description": "Anna vain IP/isäntä. Integraatio käyttää automaattisesti /api/v1. Jos ohjain käyttää itse allekirjoitettua sertifikaattia, jätä SSL-tarkistus pois käytöstä.",
-        "title": "TechPoint (LAN)"
+        "title": "LAN"
       },
       "user": {
+        "title": "Valitse merkki",
+        "description": "Valitse kulunvalvontasi merkki.",
+        "data": {
+          "brand": "Ohjaimen merkki"
+        }
+      },
+      "mode": {
         "data": {
           "mode": "Yhteystyyppi"
         },
