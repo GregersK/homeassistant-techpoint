@@ -1,0 +1,91 @@
+{
+  "config": {
+    "error": {
+      "auth": "Innritanin mishevndist",
+      "cannot_connect": "Kundi ikki knýta samband",
+      "unknown": "Óvæntað feilur"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Innritanarslag (vanliga 2)",
+          "base_url": "Cloud basis-URL (t.d. https://example.azurewebsites.net)",
+          "device_id": "Tæki-ID",
+          "name": "Navn",
+          "password": "Loyniorð",
+          "scan_interval": "Dagføringarskeið (sekund)",
+          "username": "Brúkaranavn",
+          "verify_ssl": "Staðfesta SSL-skjalið"
+        },
+        "description": "Skriva Cloud API basis-URL, tæki-ID og innritanarfrágreiðing. Samstyktin innritar við JWT og sendur boð til vanliga TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/vert (t.d. 10.0.0.5)",
+          "lan_password": "Loyniorð",
+          "lan_token": "Bearer-tekin (valfrálst)",
+          "lan_username": "Brúkaranavn",
+          "name": "Navn",
+          "scan_interval": "Dagføringarskeið (sekund)",
+          "verify_ssl": "Staðfesta SSL-skjalið"
+        },
+        "description": "Skriva bert IP/vert. Samstyktin nýtir sjálvvirkið /api/v1. Um stjórnarin nýtir eitt sjálvundirritat skjal, lat SSL-staðfesting vera av.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Sambandslag"
+        },
+        "description": "Vel hvussu tú knýtir samband við TechPoint.",
+        "title": "Legg aftrat TechPoint"
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "door_mode": {
+        "name": "Dyrustillingar",
+        "state": {
+          "block": "Spærtur",
+          "normal": "Vanligur",
+          "permanent_release": "Altíð loystur",
+          "release": "Loystur",
+          "secure": "Tryggjaður"
+        }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Hendingalog"
+      },
+      "event_log_line": {
+        "name": "Seinasta hending"
+      },
+      "last_event": {
+        "name": "Seinasta hending"
+      },
+      "webhook_url": {
+        "name": "Webhook-URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Tækjaflokking",
+          "event_log_max": "Hendingaloggsstørð (tal av linjum)",
+          "events_alarm": "Realtíð: Viðvaran á/av-hendingar",
+          "events_door": "Realtíð: Dyra-/atgonguhendingar",
+          "events_error": "Realtíð: Villa-/skaðahendingar",
+          "events_tamper": "Realtíð: Umbrot-/sabotagehendingar",
+          "scan_interval": "Dagføringarskeið (sekund)",
+          "verify_ssl": "Staðfesta SSL-skjalið"
+        },
+        "description": "Tilpassa uppáhvating, SSL-staðfesting og tækjaflokking.\n\nWebhook-URL (kopiera/líma inn í TechPoint):\n{webhook_url}\n\nTechPoint-endapunktur: {tp_endpoint}\nInnritan: {auth_type}",
+        "title": "TechPoint stillingar"
+      }
+    }
+  }
+}

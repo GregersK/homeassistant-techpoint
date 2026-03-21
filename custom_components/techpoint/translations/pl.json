@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Uwierzytelnianie nie powiodło się",
+      "cannot_connect": "Połączenie nie powiodło się",
+      "unknown": "Nieoczekiwany błąd"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Typ uwierzytelniania (zazwyczaj 2)",
+          "base_url": "Podstawowy URL Cloud (np. https://example.azurewebsites.net)",
+          "device_id": "ID urządzenia",
+          "name": "Nazwa",
+          "password": "Hasło",
+          "scan_interval": "Interwał aktualizacji (sekundy)",
+          "username": "Nazwa użytkownika",
+          "verify_ssl": "Weryfikuj certyfikat SSL"
+        },
+        "description": "Wprowadź podstawowy URL Cloud API, ID urządzenia i dane uwierzytelniające. Integracja uwierzytelni się przez JWT i przekieruje wywołania do standardowego TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/host (np. 10.0.0.5)",
+          "lan_password": "Hasło",
+          "lan_token": "Bearer token (opcjonalny)",
+          "lan_username": "Nazwa użytkownika",
+          "name": "Nazwa",
+          "scan_interval": "Interwał aktualizacji (sekundy)",
+          "verify_ssl": "Weryfikuj certyfikat SSL"
+        },
+        "description": "Wprowadź tylko IP/host. Integracja automatycznie użyje /api/v1. Jeśli kontroler używa certyfikatu z własnym podpisem, pozostaw wyłączoną weryfikację SSL.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Typ połączenia"
+        },
+        "description": "Wybierz sposób połączenia z TechPoint.",
+        "title": "Dodaj TechPoint"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Tryb drzwi",
         "state": {
+          "block": "Zablokowane",
           "normal": "Normalny",
-          "release": "Zwolnione",
           "permanent_release": "Stałe zwolnienie",
-          "secure": "Zabezpieczone",
-          "block": "Zablokowane"
+          "release": "Zwolnione",
+          "secure": "Zabezpieczone"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Dziennik zdarzeń"
+      },
+      "event_log_line": {
+        "name": "Ostatnie zdarzenie"
+      },
+      "last_event": {
+        "name": "Ostatnie zdarzenie"
+      },
+      "webhook_url": {
+        "name": "URL webhooka"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Grupowanie urządzeń",
+          "event_log_max": "Rozmiar dziennika zdarzeń (liczba wpisów)",
+          "events_alarm": "Czas rzeczywisty: Zdarzenia włączenia/wyłączenia alarmu",
+          "events_door": "Czas rzeczywisty: Zdarzenia drzwi/dostępu",
+          "events_error": "Czas rzeczywisty: Zdarzenia błędów/usterek",
+          "events_tamper": "Czas rzeczywisty: Zdarzenia sabotażu/manipulacji",
+          "scan_interval": "Interwał aktualizacji (sekundy)",
+          "verify_ssl": "Weryfikuj certyfikat SSL"
+        },
+        "description": "Dostosuj odpytywanie, weryfikację SSL i grupowanie urządzeń.\n\nURL webhooka (skopiuj/wklej do TechPoint):\n{webhook_url}\n\nPunkt końcowy TechPoint: {tp_endpoint}\nUwierzytelnianie: {auth_type}",
+        "title": "Opcje TechPoint"
       }
     }
   }

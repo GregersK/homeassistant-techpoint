@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Authenticatie mislukt",
+      "cannot_connect": "Verbinding mislukt",
+      "unknown": "Onverwachte fout"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Authenticatietype (normaal 2)",
+          "base_url": "Cloud basis-URL (bijv. https://example.azurewebsites.net)",
+          "device_id": "Apparaat-ID",
+          "name": "Naam",
+          "password": "Wachtwoord",
+          "scan_interval": "Verversingsinterval (seconden)",
+          "username": "Gebruikersnaam",
+          "verify_ssl": "SSL-certificaat verifiëren"
+        },
+        "description": "Voer de Cloud API basis-URL, het apparaat-ID en de inloggegevens in. De integratie authenticeert via JWT en stuurt aanroepen door naar de normale TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/host (bijv. 10.0.0.5)",
+          "lan_password": "Wachtwoord",
+          "lan_token": "Bearer-token (optioneel)",
+          "lan_username": "Gebruikersnaam",
+          "name": "Naam",
+          "scan_interval": "Verversingsinterval (seconden)",
+          "verify_ssl": "SSL-certificaat verifiëren"
+        },
+        "description": "Voer alleen het IP/de host in. De integratie gebruikt automatisch /api/v1. Als uw controller een zelfondertekend certificaat gebruikt, laat SSL-verificatie dan uitgeschakeld.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Verbindingstype"
+        },
+        "description": "Kies hoe u verbinding maakt met TechPoint.",
+        "title": "TechPoint toevoegen"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Deurmodus",
         "state": {
+          "block": "Geblokkeerd",
           "normal": "Normaal",
-          "release": "Vrijgegeven",
           "permanent_release": "Permanent vrijgegeven",
-          "secure": "Beveiligd",
-          "block": "Geblokkeerd"
+          "release": "Vrijgegeven",
+          "secure": "Beveiligd"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Gebeurtenissenlog"
+      },
+      "event_log_line": {
+        "name": "Laatste gebeurtenis"
+      },
+      "last_event": {
+        "name": "Laatste gebeurtenis"
+      },
+      "webhook_url": {
+        "name": "Webhook-URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Apparaatgroepering",
+          "event_log_max": "Grootte gebeurtenissenlog (aantal vermeldingen)",
+          "events_alarm": "Realtime: Alarm aan/uit-gebeurtenissen",
+          "events_door": "Realtime: Deur-/toegangsgebeurtenissen",
+          "events_error": "Realtime: Fout-/storingsgebeurtenissen",
+          "events_tamper": "Realtime: Manipulatie-/sabotagegebeurtenissen",
+          "scan_interval": "Verversingsinterval (seconden)",
+          "verify_ssl": "SSL-certificaat verifiëren"
+        },
+        "description": "Pas polling, SSL-verificatie en apparaatgroepering aan.\n\nWebhook-URL (kopiëren/plakken in TechPoint):\n{webhook_url}\n\nTechPoint-eindpunt: {tp_endpoint}\nAuthenticatie: {auth_type}",
+        "title": "TechPoint-instellingen"
       }
     }
   }

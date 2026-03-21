@@ -1,15 +1,90 @@
 {
+  "config": {
+    "error": {
+      "auth": "Autentisering misslyckades",
+      "cannot_connect": "Anslutning misslyckades",
+      "unknown": "Oväntat fel"
+    },
+    "step": {
+      "cloud": {
+        "data": {
+          "auth_type": "Autentiseringstyp (vanligtvis 2)",
+          "base_url": "Cloud-bas-URL (t.ex. https://example.azurewebsites.net)",
+          "device_id": "Enhets-ID",
+          "name": "Namn",
+          "password": "Lösenord",
+          "scan_interval": "Uppdateringsintervall (sekunder)",
+          "username": "Användarnamn",
+          "verify_ssl": "Verifiera SSL-certifikat"
+        },
+        "description": "Ange Cloud API-bas-URL, enhets-ID och inloggningsuppgifter. Integrationen autentiserar via JWT och vidarebefordrar anrop till det vanliga TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
+      },
+      "lan": {
+        "data": {
+          "base_url": "IP/värd (t.ex. 10.0.0.5)",
+          "lan_password": "Lösenord",
+          "lan_token": "Bearer-token (valfritt)",
+          "lan_username": "Användarnamn",
+          "name": "Namn",
+          "scan_interval": "Uppdateringsintervall (sekunder)",
+          "verify_ssl": "Verifiera SSL-certifikat"
+        },
+        "description": "Ange bara IP/värd. Integrationen använder automatiskt /api/v1. Om styrenheten använder ett självsignerat certifikat, låt SSL-verifiering vara avstängd.",
+        "title": "TechPoint (LAN)"
+      },
+      "user": {
+        "data": {
+          "mode": "Anslutningstyp"
+        },
+        "description": "Välj hur du vill ansluta till TechPoint.",
+        "title": "Lägg till TechPoint"
+      }
+    }
+  },
   "entity": {
     "select": {
       "door_mode": {
         "name": "Dörrläge",
         "state": {
+          "block": "Blockerad",
           "normal": "Normal",
-          "release": "Frigiven",
           "permanent_release": "Permanent frigiven",
-          "secure": "Säkrad",
-          "block": "Blockerad"
+          "release": "Frigiven",
+          "secure": "Säkrad"
         }
+      }
+    },
+    "sensor": {
+      "event_log": {
+        "name": "Händelselogg"
+      },
+      "event_log_line": {
+        "name": "Senaste händelse"
+      },
+      "last_event": {
+        "name": "Senaste händelse"
+      },
+      "webhook_url": {
+        "name": "Webhook-URL"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "device_grouping": "Enhetsgruppering",
+          "event_log_max": "Händelseloggstorlek (antal poster)",
+          "events_alarm": "Realtid: Larm på/av-händelser",
+          "events_door": "Realtid: Dörr-/åtkomsthändelser",
+          "events_error": "Realtid: Fel-/störningshändelser",
+          "events_tamper": "Realtid: Manipulerings-/sabotagehändelser",
+          "scan_interval": "Uppdateringsintervall (sekunder)",
+          "verify_ssl": "Verifiera SSL-certifikat"
+        },
+        "description": "Justera polling, SSL-verifiering och enhetsgruppering.\n\nWebhook-URL (kopiera/klistra in i TechPoint):\n{webhook_url}\n\nTechPoint-slutpunkt: {tp_endpoint}\nAutentisering: {auth_type}",
+        "title": "TechPoint-inställningar"
       }
     }
   }
