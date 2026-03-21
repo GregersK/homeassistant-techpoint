@@ -8,7 +8,7 @@
     "step": {
       "user": {
         "title": "Lägg till TechPoint",
-        "description": "Välj hur du ansluter till TechPoint.",
+        "description": "Välj hur du vill ansluta till TechPoint.",
         "data": {
           "mode": "Anslutningstyp"
         }
@@ -24,7 +24,7 @@
           "verify_ssl": "Verifiera SSL-certifikat"
         },
         "description": "Ange bara IP/värd. Integrationen använder automatiskt /api/v1. Om styrenheten använder ett självsignerat certifikat, låt SSL-verifiering vara avstängd.",
-        "title": "LAN"
+        "title": "TechPoint (LAN)"
       },
       "cloud": {
         "data": {
