@@ -70,17 +70,6 @@ script:
     sequence:
       - service: techpoint.access_get_groups
         response_variable: resp
-      - variables:
-          # Byg liste: ["(ingen)", "3 – Adgang dag", "5 – Adgang nat", ...]
-          opts: >
-            {% set groups = resp['access_groups'] %}
-            {% set ns = namespace(items=['(ingen)']) %}
-            {% for g in groups %}
-              {% set gid = g['id']['id'] if g.get('id') is mapping else g.get('id') %}
-              {% set gname = g.get('name', '(ukendt)') %}
-              {% set ns.items = ns.items + [gid | string + ' \u2013 ' + gname] %}
-            {% endfor %}
-            {{ ns.items }}
       - service: input_select.set_options
         target:
           entity_id:
@@ -88,7 +77,18 @@ script:
             - input_select.techpoint_access_group_2
             - input_select.techpoint_access_group_3
         data:
-          options: "{{ opts }}"
+          # Format: "1:Hoveddør", "2:Admin" – ID foran kolon bruges ved tildeling
+          options: >
+            {% set groups = resp.get('access_groups', []) %}
+            {% set ns = namespace(items=['(ingen)']) %}
+            {% for g in groups %}
+              {% set raw_id = g.get('id') %}
+              {% set gid = raw_id.get('id') if raw_id is mapping else raw_id %}
+              {% if gid is not none %}
+                {% set ns.items = ns.items + [gid | string + ':' + g.get('name', '(ukendt)')] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items }}
 
   # ── Opret kortindehaver, kort & tildel adgang ───────────────────────
   techpoint_full_flow:
@@ -126,16 +126,16 @@ script:
 
       # ── Trin 4: Udled adgangsgruppe-IDs fra valgte dropdowns ────────
       - variables:
-          # Format i dropdown: "3 – Adgang dag" → split på ' – ' → tag første del som int
+          # Format i dropdown: "3:Adgang dag" → split på ':' → tag første del som int
           ag1: >
             {% set sel = states('input_select.techpoint_access_group_1') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
           ag2: >
             {% set sel = states('input_select.techpoint_access_group_2') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
           ag3: >
             {% set sel = states('input_select.techpoint_access_group_3') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
 
       # ── Trin 5: Tildel adgang ───────────────────────────────────────
       - service: techpoint.access_update_cardholder

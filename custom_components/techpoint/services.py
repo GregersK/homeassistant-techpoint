@@ -214,10 +214,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     # ---------- ACCESS ----------
     async def access_get_groups(call: ServiceCall):
-        client = _get_client(hass, call.data.get("entry_id"))
-        res = await client.get_access_groups()
-        _fire(hass, f"{DOMAIN}_access_get_groups_result", {"result": res})
-        return {"access_groups": res}
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_access_groups()
+            _fire(hass, f"{DOMAIN}_access_get_groups_result", {"result": res})
+            return {"access_groups": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
 
     async def access_get_static_types(call: ServiceCall):
         client = _get_client(hass, call.data.get("entry_id"))
