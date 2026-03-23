@@ -1,18 +1,18 @@
 # TechPoint Access Management – HA Package
 #
-# Kopiér til din HA config/packages/techpoint_access.yaml
-# Husk at aktivere packages i configuration.yaml:
+# Copy to: config/packages/techpoint_access.yaml
+# Enable packages in configuration.yaml:
 #   homeassistant:
 #     packages: !include_dir_named packages
 
 input_text:
-  # --- Kortindehaver ---
+  # --- Cardholder ---
   techpoint_ch_firstname:
-    name: "Fornavn"
+    name: "First name"
     icon: mdi:account
     initial: ""
   techpoint_ch_lastname:
-    name: "Efternavn"
+    name: "Last name"
     icon: mdi:account
     initial: ""
   techpoint_ch_email:
@@ -20,52 +20,63 @@ input_text:
     icon: mdi:email
     initial: ""
   techpoint_ch_phone:
-    name: "Telefon"
+    name: "Phone"
     icon: mdi:phone
     initial: ""
   techpoint_ch_ext_id:
-    name: "Eksternt ID (valgfrit)"
+    name: "External ID (optional)"
     icon: mdi:identifier
     initial: ""
 
-  # --- Kort ---
+  # --- Card ---
   techpoint_card_number:
-    name: "Kortnummer"
+    name: "Card number"
     icon: mdi:card-account-details
     initial: ""
 
 input_select:
-  # --- Adgangsgrupper (udfyldes via "Hent adgangsgrupper"-knappen) ---
+  # --- Access groups (populated via "Load access groups" button) ---
   techpoint_access_group_1:
-    name: "Adgangsgruppe 1"
+    name: "Access group 1"
     options:
-      - "(ingen)"
+      - "(none)"
     icon: mdi:door
   techpoint_access_group_2:
-    name: "Adgangsgruppe 2"
+    name: "Access group 2"
     options:
-      - "(ingen)"
+      - "(none)"
     icon: mdi:door
   techpoint_access_group_3:
-    name: "Adgangsgruppe 3"
+    name: "Access group 3"
     options:
-      - "(ingen)"
+      - "(none)"
     icon: mdi:door
+
+  # --- Cardholder management list ---
+  techpoint_cardholder_list:
+    name: "Cardholder"
+    options:
+      - "(none)"
+    icon: mdi:account-circle
 
 input_datetime:
   techpoint_card_valid_from:
-    name: "Gyldig fra"
+    name: "Valid from"
     has_date: true
     has_time: true
   techpoint_card_valid_to:
-    name: "Gyldig til"
+    name: "Valid to"
+    has_date: true
+    has_time: true
+  techpoint_manage_valid_to:
+    name: "New valid to (management)"
     has_date: true
     has_time: true
 
 script:
-  # ── Hent adgangsgrupper fra TechPoint og udfyld dropdowns ──────────
+  # ── Load access groups from TechPoint into dropdowns ──────────────
   techpoint_load_access_groups:
-    alias: "TechPoint: Hent adgangsgrupper"
+    alias: "TechPoint: Load access groups"
     icon: mdi:refresh
     sequence:
       - service: techpoint.access_get_groups
@@ -77,26 +88,54 @@ script:
             - input_select.techpoint_access_group_2
             - input_select.techpoint_access_group_3
         data:
-          # Format: "1:Hoveddør", "2:Admin" – ID foran kolon bruges ved tildeling
+          # Format: "1:Main door", "2:Admin" – ID before colon used for assignment
           options: >
             {% set groups = resp.get('access_groups', []) %}
-            {% set ns = namespace(items=['(ingen)']) %}
+            {% set ns = namespace(items=['(none)']) %}
             {% for g in groups %}
               {% set raw_id = g.get('id') %}
               {% set gid = raw_id.get('id') if raw_id is mapping else raw_id %}
               {% if gid is not none %}
-                {% set ns.items = ns.items + [gid | string + ':' + g.get('name', '(ukendt)')] %}
+                {% set ns.items = ns.items + [gid | string + ':' + g.get('name', '(unknown)')] %}
               {% endif %}
             {% endfor %}
             {{ ns.items }}
 
-  # ── Opret kortindehaver, kort & tildel adgang ───────────────────────
+  # ── Load cardholders from TechPoint into dropdown ──────────────────
+  techpoint_load_cardholders:
+    alias: "TechPoint: Load cardholders"
+    icon: mdi:account-multiple
+    sequence:
+      - service: techpoint.access_list_cardholders
+        response_variable: resp
+      - service: input_select.set_options
+        target:
+          entity_id: input_select.techpoint_cardholder_list
+        data:
+          # Format: "ch_id:card_id:Name" – parsed by management scripts
+          options: >
+            {% set chs = resp.get('cardholders', []) %}
+            {% set ns = namespace(items=['(none)']) %}
+            {% for ch in chs %}
+              {% set raw_id = ch.get('id') %}
+              {% set ch_id = raw_id.get('id', 0) if raw_id is mapping else (raw_id | int(0)) %}
+              {% set fn = ch.get('firstName', '') %}
+              {% set ln = ch.get('lastName', '') %}
+              {% set ids = ch.get('cardIDs', {}).get('ids', []) %}
+              {% set card_id = ids[0].get('id', 0) if ids else 0 %}
+              {% if ch_id > 0 %}
+                {% set ns.items = ns.items + [ch_id|string + ':' + card_id|string + ':' + (fn + ' ' + ln).strip()] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items }}
+
+  # ── Create cardholder, card & assign access ────────────────────────
   techpoint_full_flow:
-    alias: "TechPoint: Opret kortindehaver, kort & tildel adgang"
+    alias: "TechPoint: Create cardholder, card & assign access"
     icon: mdi:shield-account-outline
     sequence:
 
-      # ── Trin 1: Opret kortindehaver ─────────────────────────────────
+      # ── Step 1: Create cardholder ────────────────────────────────
       - service: techpoint.access_create_cardholder
         response_variable: ch_response
         data:
@@ -108,11 +147,11 @@ script:
             id:
               extId: "{{ states('input_text.techpoint_ch_ext_id') or none }}"
 
-      # ── Trin 2: Gem kortindehaver-ID fra svar ───────────────────────
+      # ── Step 2: Store cardholder ID ──────────────────────────────
       - variables:
           ch_id: "{{ ch_response['cardholder_id'] }}"
 
-      # ── Trin 3: Opret kort ──────────────────────────────────────────
+      # ── Step 3: Create card ──────────────────────────────────────
       - service: techpoint.access_create_card
         response_variable: card_response
         data:
@@ -124,24 +163,129 @@ script:
             validTo: "{{ states('input_datetime.techpoint_card_valid_to') | replace(' ', 'T') }}Z"
             active: true
 
-      # ── Trin 4: Udled adgangsgruppe-IDs fra valgte dropdowns ────────
+      # ── Step 4: Resolve access group IDs from dropdowns ─────────
       - variables:
-          # Format i dropdown: "3:Adgang dag" → split på ':' → tag første del som int
+          # Format in dropdown: "3:Main door" → split on ':' → first part as int
           ag1: >
             {% set sel = states('input_select.techpoint_access_group_1') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+            {{ 0 if sel == '(none)' else (sel.split(':') | first | int(0)) }}
           ag2: >
             {% set sel = states('input_select.techpoint_access_group_2') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+            {{ 0 if sel == '(none)' else (sel.split(':') | first | int(0)) }}
           ag3: >
             {% set sel = states('input_select.techpoint_access_group_3') %}
-            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+            {{ 0 if sel == '(none)' else (sel.split(':') | first | int(0)) }}
 
-      # ── Trin 5: Tildel adgang ───────────────────────────────────────
+      # ── Step 5: Update card with access group links ──────────────
+      # Access groups live on the card (accessGroupLinks), not the cardholder
+      - service: techpoint.access_update_card
+        data:
+          card_id: "{{ card_response['card_id'] }}"
+          body:
+            number: "{{ states('input_text.techpoint_card_number') }}"
+            cardHolderID:
+              id: "{{ ch_id }}"
+            validFrom: "{{ states('input_datetime.techpoint_card_valid_from') | replace(' ', 'T') }}Z"
+            validTo: "{{ states('input_datetime.techpoint_card_valid_to') | replace(' ', 'T') }}Z"
+            active: true
+            accessGroupLinks: >
+              {{ ([{'accessGroupID': {'id': ag1}}] if ag1 > 0 else []) +
+                 ([{'accessGroupID': {'id': ag2}}] if ag2 > 0 else []) +
+                 ([{'accessGroupID': {'id': ag3}}] if ag3 > 0 else []) }}
+
+      # ── Step 6: Success notification ────────────────────────────
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Access created"
+          message: >
+            Cardholder: {{ states('input_text.techpoint_ch_firstname') }} {{ states('input_text.techpoint_ch_lastname') }}
+            Card: {{ states('input_text.techpoint_card_number') }}
+            Valid to: {{ states('input_datetime.techpoint_card_valid_to') }}
+
+  # ── Update selected cardholder: expiry date and access groups ──────
+  techpoint_update_selected:
+    alias: "TechPoint: Update selected cardholder"
+    icon: mdi:account-edit
+    sequence:
+      - variables:
+          sel: "{{ states('input_select.techpoint_cardholder_list') }}"
+          ch_id: "{{ sel.split(':')[0] | int(0) }}"
+          card_id: "{{ sel.split(':')[1] | int(0) }}"
+          ag1: >
+            {% set s = states('input_select.techpoint_access_group_1') %}
+            {{ 0 if s == '(none)' else (s.split(':') | first | int(0)) }}
+          ag2: >
+            {% set s = states('input_select.techpoint_access_group_2') %}
+            {{ 0 if s == '(none)' else (s.split(':') | first | int(0)) }}
+          ag3: >
+            {% set s = states('input_select.techpoint_access_group_3') %}
+            {{ 0 if s == '(none)' else (s.split(':') | first | int(0)) }}
+
+      # Guard: abort if no valid cardholder selected
+      - condition: template
+        value_template: "{{ ch_id > 0 }}"
+
+      # Update cardholder expiry
       - service: techpoint.access_update_cardholder
-        response_variable: access_response
         data:
           body:
             id:
               id: "{{ ch_id }}"
-            accessGroups: "{{ ([{'id': ag1}] if ag1 > 0 else []) + ([{'id': ag2}] if ag2 > 0 else []) + ([{'id': ag3}] if ag3 > 0 else []) }}"
+            validTo: "{{ states('input_datetime.techpoint_manage_valid_to') | replace(' ', 'T') }}Z"
+
+      # Update card access groups (only if a card is linked)
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ card_id > 0 }}"
+            sequence:
+              - service: techpoint.access_update_card
+                data:
+                  card_id: "{{ card_id }}"
+                  body:
+                    accessGroupLinks: >
+                      {{ ([{'accessGroupID': {'id': ag1}}] if ag1 > 0 else []) +
+                         ([{'accessGroupID': {'id': ag2}}] if ag2 > 0 else []) +
+                         ([{'accessGroupID': {'id': ag3}}] if ag3 > 0 else []) }}
+
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Updated"
+          message: "Cardholder {{ sel.split(':')[2] | default('') }} has been updated."
+
+  # ── Delete selected cardholder and their linked card ───────────────
+  techpoint_delete_selected:
+    alias: "TechPoint: Delete selected cardholder"
+    icon: mdi:account-remove
+    sequence:
+      - variables:
+          sel: "{{ states('input_select.techpoint_cardholder_list') }}"
+          ch_id: "{{ sel.split(':')[0] | int(0) }}"
+          card_id: "{{ sel.split(':')[1] | int(0) }}"
+
+      # Guard: abort if no valid cardholder selected
+      - condition: template
+        value_template: "{{ ch_id > 0 }}"
+
+      # Delete linked card first (if one exists)
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ card_id > 0 }}"
+            sequence:
+              - service: techpoint.access_delete_card
+                data:
+                  card_id: "{{ card_id }}"
+
+      # Delete cardholder
+      - service: techpoint.access_delete_cardholder
+        data:
+          id: "{{ ch_id }}"
+
+      # Refresh cardholder list
+      - service: script.techpoint_load_cardholders
+
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Deleted"
+          message: "Cardholder {{ sel.split(':')[2] | default('') }} has been deleted."

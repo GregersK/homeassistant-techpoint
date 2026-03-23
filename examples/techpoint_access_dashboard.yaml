@@ -1,64 +1,95 @@
-# TechPoint Adgangsstyring – Lovelace Dashboard
+# TechPoint Access Management – Lovelace Dashboard
 #
-# Tilføj via HA UI:
+# Add via HA UI:
 #   Settings → Dashboards → Add Dashboard → (raw config editor)
+# Or paste into an existing view's raw YAML.
+#
+# Requires: examples/techpoint_access_package.yaml loaded as a package.
 
-title: TechPoint Adgang
+title: TechPoint Access
 views:
-  - title: Adgangsstyring
+  - title: Access Management
     icon: mdi:shield-key
     cards:
 
-      # ── Kortindehaver ───────────────────────────────────────────────
+      # ── Cardholder ───────────────────────────────────────────────────
       - type: entities
-        title: Kortindehaver
+        title: Cardholder
         icon: mdi:account
         entities:
           - entity: input_text.techpoint_ch_firstname
-            name: Fornavn
+            name: First name
           - entity: input_text.techpoint_ch_lastname
-            name: Efternavn
+            name: Last name
           - entity: input_text.techpoint_ch_email
             name: Email
           - entity: input_text.techpoint_ch_phone
-            name: Telefon
+            name: Phone
           - entity: input_text.techpoint_ch_ext_id
-            name: Eksternt ID (valgfrit)
+            name: External ID (optional)
 
-      # ── Kort ────────────────────────────────────────────────────────
+      # ── Card ─────────────────────────────────────────────────────────
       - type: entities
-        title: Kort
+        title: Card
         icon: mdi:card-account-details
         entities:
           - entity: input_text.techpoint_card_number
-            name: Kortnummer
+            name: Card number
           - entity: input_datetime.techpoint_card_valid_from
-            name: Gyldig fra
+            name: Valid from
           - entity: input_datetime.techpoint_card_valid_to
-            name: Gyldig til
+            name: Valid to
 
-      # ── Adgangsgrupper ──────────────────────────────────────────────
+      # ── Access groups ────────────────────────────────────────────────
       - type: entities
-        title: Adgangsgrupper
+        title: Access groups
         icon: mdi:door-open
         entities:
           - entity: input_select.techpoint_access_group_1
-            name: Adgangsgruppe 1
+            name: Access group 1
           - entity: input_select.techpoint_access_group_2
-            name: Adgangsgruppe 2
+            name: Access group 2
           - entity: input_select.techpoint_access_group_3
-            name: Adgangsgruppe 3
+            name: Access group 3
         footer:
           type: buttons
           entities:
             - entity: script.techpoint_load_access_groups
-              name: Hent adgangsgrupper
+              name: Load access groups
               icon: mdi:refresh
 
-      # ── Knapper ─────────────────────────────────────────────────────
+      # ── Create ───────────────────────────────────────────────────────
       - type: button
-        name: Opret kortindehaver, kort & tildel adgang
+        name: Create cardholder, card & assign access
         icon: mdi:shield-plus
         tap_action:
           action: call-service
           service: script.techpoint_full_flow
+
+      # ── Manage existing cardholders ──────────────────────────────────
+      - type: entities
+        title: Manage cardholder
+        icon: mdi:account-edit
+        entities:
+          - entity: input_select.techpoint_cardholder_list
+            name: Cardholder
+          - entity: input_datetime.techpoint_manage_valid_to
+            name: New valid to
+          - entity: input_select.techpoint_access_group_1
+            name: Access group 1
+          - entity: input_select.techpoint_access_group_2
+            name: Access group 2
+          - entity: input_select.techpoint_access_group_3
+            name: Access group 3
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_cardholders
+              name: Load cardholders
+              icon: mdi:account-multiple
+            - entity: script.techpoint_update_selected
+              name: Update
+              icon: mdi:content-save
+            - entity: script.techpoint_delete_selected
+              name: Delete
+              icon: mdi:account-remove
