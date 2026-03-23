@@ -69,32 +69,25 @@ script:
     icon: mdi:shield-account-outline
     sequence:
 
-      # ── Trin 1: Byg cardholder-body ────────────────────────────────
-      - variables:
-          ch_body: >
-            {% set b = {
-              "firstName": states('input_text.techpoint_ch_firstname'),
-              "lastName": states('input_text.techpoint_ch_lastname')
-            } %}
-            {% if states('input_text.techpoint_ch_email') %}
-              {% set b = dict(b, **{"email": states('input_text.techpoint_ch_email')}) %}
-            {% endif %}
-            {% if states('input_text.techpoint_ch_phone') %}
-              {% set b = dict(b, **{"phone": states('input_text.techpoint_ch_phone')}) %}
-            {% endif %}
-            {% if states('input_text.techpoint_ch_ext_id') %}
-              {% set b = dict(b, **{"id": {"extId": states('input_text.techpoint_ch_ext_id')}}) %}
-            {% endif %}
-            {{ b }}
-
-      # ── Trin 2: Opret kortindehaver ─────────────────────────────────
+      # ── Trin 1: Opret kortindehaver ─────────────────────────────────
+      # body er et inline YAML-objekt – HA evaluerer hvert felt som template
       - service: techpoint.access_create_cardholder
         response_variable: ch_response
         data:
           entry_id: "{{ states('input_text.techpoint_entry_id') }}"
-          body: "{{ ch_body }}"
+          body:
+            firstName: "{{ states('input_text.techpoint_ch_firstname') }}"
+            lastName: "{{ states('input_text.techpoint_ch_lastname') }}"
+            email: "{{ states('input_text.techpoint_ch_email') or none }}"
+            phone: "{{ states('input_text.techpoint_ch_phone') or none }}"
+            id:
+              extId: "{{ states('input_text.techpoint_ch_ext_id') or none }}"
 
-      # ── Trin 3: Opret kort med kortindehaver-ID fra svaret ──────────
+      # ── Trin 2: Gem kortindehaver-ID fra svar ───────────────────────
+      - variables:
+          ch_id: "{{ ch_response['result']['id']['id'] }}"
+
+      # ── Trin 3: Opret kort ──────────────────────────────────────────
       - service: techpoint.access_create_card
         response_variable: card_response
         data:
@@ -102,31 +95,23 @@ script:
           body:
             number: "{{ states('input_text.techpoint_card_number') }}"
             cardHolderID:
-              id: "{{ ch_response['result']['id']['id'] }}"
-            validFrom: "{{ (states('input_datetime.techpoint_card_valid_from') | as_datetime).isoformat() }}"
-            validTo: "{{ (states('input_datetime.techpoint_card_valid_to') | as_datetime).isoformat() }}"
+              id: "{{ ch_id }}"
+            validFrom: "{{ states('input_datetime.techpoint_card_valid_from') | replace(' ', 'T') }}Z"
+            validTo: "{{ states('input_datetime.techpoint_card_valid_to') | replace(' ', 'T') }}Z"
             active: true
 
-      # ── Trin 4: Byg adgangsgruppe-liste og tildel adgang ───────────
+      # ── Trin 4: Gem adgangsgruppe-IDs ──────────────────────────────
       - variables:
-          access_groups: >
-            {% set groups = [] %}
-            {% if states('input_text.techpoint_access_group_1') | int(0) > 0 %}
-              {% set groups = groups + [{"id": states('input_text.techpoint_access_group_1') | int}] %}
-            {% endif %}
-            {% if states('input_text.techpoint_access_group_2') | int(0) > 0 %}
-              {% set groups = groups + [{"id": states('input_text.techpoint_access_group_2') | int}] %}
-            {% endif %}
-            {% if states('input_text.techpoint_access_group_3') | int(0) > 0 %}
-              {% set groups = groups + [{"id": states('input_text.techpoint_access_group_3') | int}] %}
-            {% endif %}
-            {{ groups }}
+          ag1: "{{ states('input_text.techpoint_access_group_1') | int(0) }}"
+          ag2: "{{ states('input_text.techpoint_access_group_2') | int(0) }}"
+          ag3: "{{ states('input_text.techpoint_access_group_3') | int(0) }}"
 
+      # ── Trin 5: Tildel adgang ───────────────────────────────────────
       - service: techpoint.access_update_cardholder
         response_variable: access_response
         data:
           entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             id:
-              id: "{{ ch_response['result']['id']['id'] }}"
-            accessGroups: "{{ access_groups }}"
+              id: "{{ ch_id }}"
+            accessGroups: "{{ ([{'id': ag1}] if ag1 > 0 else []) + ([{'id': ag2}] if ag2 > 0 else []) + ([{'id': ag3}] if ag3 > 0 else []) }}"
