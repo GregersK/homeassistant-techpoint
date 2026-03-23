@@ -298,6 +298,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
         try:
             client = _get_client(hass, call.data.get("entry_id"))
             body = dict(call.data["body"] or {})
+            # TechPoint expects number as string; HA template engine may coerce
+            # pure-digit values to int via parse_result=True
+            if "number" in body and body["number"] is not None:
+                body["number"] = str(body["number"])
             body = await _ensure_cross_id_has_numeric_id(client, "card", body)
             res = await client.create_card(body)
             card_id = _int_id_local(res) or _int_id_local(body)
