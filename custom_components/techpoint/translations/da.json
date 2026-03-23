@@ -6,6 +6,13 @@
       "unknown": "Uventet fejl"
     },
     "step": {
+      "user": {
+        "title": "Tilføj TechPoint",
+        "description": "Vælg hvordan du vil forbinde til TechPoint.",
+        "data": {
+          "mode": "Forbindelsestype"
+        }
+      },
       "cloud": {
         "data": {
           "auth_type": "Godkendelsestype (normalt 2)",
@@ -17,7 +24,7 @@
           "username": "Brugernavn",
           "verify_ssl": "Verificér SSL-certifikat"
         },
-        "description": "Indtast din Cloud API basis-URL, enheds-id og bruger/kode. Integrationen autentificerer med JWT og proxy'er kald til den normale TechPoint Web API.",
+        "description": "Indtast din Cloud API basis-URL, enheds-id og bruger/kode. Integrationen autentificerer med JWT og proxy'er kald til controllerens Web API.",
         "title": "TechPoint (Cloud)"
       },
       "lan": {
@@ -30,15 +37,8 @@
           "scan_interval": "Opdateringsinterval (sekunder)",
           "verify_ssl": "Verificér SSL-certifikat"
         },
-        "description": "Indtast kun IP/host. Integrationen tilføjer automatisk /api/v1. Hvis TechPoint bruger et selvsigneret certifikat, så lad SSL-verificering være slået fra.",
+        "description": "Indtast kun IP/host. Integrationen tilføjer automatisk /api/v1. Hvis controlleren bruger et selvsigneret certifikat, så lad SSL-verificering være slået fra.",
         "title": "TechPoint (LAN)"
-      },
-      "user": {
-        "data": {
-          "mode": "Forbindelsestype"
-        },
-        "description": "Vælg hvordan du vil forbinde til TechPoint.",
-        "title": "Tilføj TechPoint"
       }
     }
   },
@@ -84,7 +84,7 @@
           "verify_ssl": "Verificér SSL-certifikat"
         },
         "description": "Justér polling, SSL og hvordan enheder grupperes under Enheder.\n\nWebhook-URL (kopiér/indsæt i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nGodkendelse: {auth_type}",
-        "title": "TechPoint indstillinger"
+        "title": "Controllerindstillinger"
       }
     }
   }

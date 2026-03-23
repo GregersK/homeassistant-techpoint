@@ -4,9 +4,10 @@ from homeassistant.const import Platform
 
 DOMAIN = "techpoint"
 
-# Device metadata (used for device registry entries)
+# Device metadata
 MANUFACTURER = "TechSolutions"
 MODEL_CONTROLLER = "TechPoint"
+DEFAULT_NAME = "TechPoint"
 
 PLATFORMS: list[Platform] = [
     Platform.LOCK,
@@ -36,7 +37,6 @@ GROUP_BY_ITEM = "item"
 DEVICE_GROUPINGS = [GROUP_BY_TYPE, GROUP_BY_ITEM]
 DEFAULT_DEVICE_GROUPING = GROUP_BY_TYPE
 
-DEFAULT_NAME = "TechPoint"
 DEFAULT_SCAN_INTERVAL = 10
 
 # Default SSL settings:

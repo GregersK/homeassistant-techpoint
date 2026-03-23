@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import DeviceContext, build_device_info
+from .device import make_device_context, build_device_info
 
 
 async def async_setup_entry(
@@ -62,7 +62,7 @@ class TechPointZoneSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
-        ctx = DeviceContext(entry_id=self._entry_id, controller_name=self.coordinator.name)
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
         z = self._current() or {}
         base = z.get("name") or f"{self._zone_id}"
         return build_device_info(ctx, grouping, "zone", item_id=self._zone_id, item_name=str(base))

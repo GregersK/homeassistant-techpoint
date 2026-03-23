@@ -1,0 +1,64 @@
+# TechPoint Adgangsstyring – Lovelace Dashboard
+#
+# Tilføj via HA UI:
+#   Settings → Dashboards → Add Dashboard → (raw config editor)
+
+title: TechPoint Adgang
+views:
+  - title: Adgangsstyring
+    icon: mdi:shield-key
+    cards:
+
+      # ── Kortindehaver ───────────────────────────────────────────────
+      - type: entities
+        title: Kortindehaver
+        icon: mdi:account
+        entities:
+          - entity: input_text.techpoint_ch_firstname
+            name: Fornavn
+          - entity: input_text.techpoint_ch_lastname
+            name: Efternavn
+          - entity: input_text.techpoint_ch_email
+            name: Email
+          - entity: input_text.techpoint_ch_phone
+            name: Telefon
+          - entity: input_text.techpoint_ch_ext_id
+            name: Eksternt ID (valgfrit)
+
+      # ── Kort ────────────────────────────────────────────────────────
+      - type: entities
+        title: Kort
+        icon: mdi:card-account-details
+        entities:
+          - entity: input_text.techpoint_card_number
+            name: Kortnummer
+          - entity: input_datetime.techpoint_card_valid_from
+            name: Gyldig fra
+          - entity: input_datetime.techpoint_card_valid_to
+            name: Gyldig til
+
+      # ── Adgangsgrupper ──────────────────────────────────────────────
+      - type: entities
+        title: Adgangsgrupper
+        icon: mdi:door-open
+        entities:
+          - entity: input_select.techpoint_access_group_1
+            name: Adgangsgruppe 1
+          - entity: input_select.techpoint_access_group_2
+            name: Adgangsgruppe 2
+          - entity: input_select.techpoint_access_group_3
+            name: Adgangsgruppe 3
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_access_groups
+              name: Hent adgangsgrupper
+              icon: mdi:refresh
+
+      # ── Knapper ─────────────────────────────────────────────────────
+      - type: button
+        name: Opret kortindehaver, kort & tildel adgang
+        icon: mdi:shield-plus
+        tap_action:
+          action: call-service
+          service: script.techpoint_full_flow

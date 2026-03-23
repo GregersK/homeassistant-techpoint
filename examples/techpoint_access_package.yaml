@@ -1,0 +1,147 @@
+# TechPoint Access Management – HA Package
+#
+# Kopiér til din HA config/packages/techpoint_access.yaml
+# Husk at aktivere packages i configuration.yaml:
+#   homeassistant:
+#     packages: !include_dir_named packages
+
+input_text:
+  # --- Kortindehaver ---
+  techpoint_ch_firstname:
+    name: "Fornavn"
+    icon: mdi:account
+    initial: ""
+  techpoint_ch_lastname:
+    name: "Efternavn"
+    icon: mdi:account
+    initial: ""
+  techpoint_ch_email:
+    name: "Email"
+    icon: mdi:email
+    initial: ""
+  techpoint_ch_phone:
+    name: "Telefon"
+    icon: mdi:phone
+    initial: ""
+  techpoint_ch_ext_id:
+    name: "Eksternt ID (valgfrit)"
+    icon: mdi:identifier
+    initial: ""
+
+  # --- Kort ---
+  techpoint_card_number:
+    name: "Kortnummer"
+    icon: mdi:card-account-details
+    initial: ""
+
+input_select:
+  # --- Adgangsgrupper (udfyldes via "Hent adgangsgrupper"-knappen) ---
+  techpoint_access_group_1:
+    name: "Adgangsgruppe 1"
+    options:
+      - "(ingen)"
+    icon: mdi:door
+  techpoint_access_group_2:
+    name: "Adgangsgruppe 2"
+    options:
+      - "(ingen)"
+    icon: mdi:door
+  techpoint_access_group_3:
+    name: "Adgangsgruppe 3"
+    options:
+      - "(ingen)"
+    icon: mdi:door
+
+input_datetime:
+  techpoint_card_valid_from:
+    name: "Gyldig fra"
+    has_date: true
+    has_time: true
+  techpoint_card_valid_to:
+    name: "Gyldig til"
+    has_date: true
+    has_time: true
+
+script:
+  # ── Hent adgangsgrupper fra TechPoint og udfyld dropdowns ──────────
+  techpoint_load_access_groups:
+    alias: "TechPoint: Hent adgangsgrupper"
+    icon: mdi:refresh
+    sequence:
+      - service: techpoint.access_get_groups
+        response_variable: resp
+      - service: input_select.set_options
+        target:
+          entity_id:
+            - input_select.techpoint_access_group_1
+            - input_select.techpoint_access_group_2
+            - input_select.techpoint_access_group_3
+        data:
+          # Format: "1:Hoveddør", "2:Admin" – ID foran kolon bruges ved tildeling
+          options: >
+            {% set groups = resp.get('access_groups', []) %}
+            {% set ns = namespace(items=['(ingen)']) %}
+            {% for g in groups %}
+              {% set raw_id = g.get('id') %}
+              {% set gid = raw_id.get('id') if raw_id is mapping else raw_id %}
+              {% if gid is not none %}
+                {% set ns.items = ns.items + [gid | string + ':' + g.get('name', '(ukendt)')] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items }}
+
+  # ── Opret kortindehaver, kort & tildel adgang ───────────────────────
+  techpoint_full_flow:
+    alias: "TechPoint: Opret kortindehaver, kort & tildel adgang"
+    icon: mdi:shield-account-outline
+    sequence:
+
+      # ── Trin 1: Opret kortindehaver ─────────────────────────────────
+      - service: techpoint.access_create_cardholder
+        response_variable: ch_response
+        data:
+          body:
+            firstName: "{{ states('input_text.techpoint_ch_firstname') }}"
+            lastName: "{{ states('input_text.techpoint_ch_lastname') }}"
+            email: "{{ states('input_text.techpoint_ch_email') or none }}"
+            phone: "{{ states('input_text.techpoint_ch_phone') or none }}"
+            id:
+              extId: "{{ states('input_text.techpoint_ch_ext_id') or none }}"
+
+      # ── Trin 2: Gem kortindehaver-ID fra svar ───────────────────────
+      - variables:
+          ch_id: "{{ ch_response['result']['id']['id'] }}"
+
+      # ── Trin 3: Opret kort ──────────────────────────────────────────
+      - service: techpoint.access_create_card
+        response_variable: card_response
+        data:
+          body:
+            number: "{{ states('input_text.techpoint_card_number') }}"
+            cardHolderID:
+              id: "{{ ch_id }}"
+            validFrom: "{{ states('input_datetime.techpoint_card_valid_from') | replace(' ', 'T') }}Z"
+            validTo: "{{ states('input_datetime.techpoint_card_valid_to') | replace(' ', 'T') }}Z"
+            active: true
+
+      # ── Trin 4: Udled adgangsgruppe-IDs fra valgte dropdowns ────────
+      - variables:
+          # Format i dropdown: "3:Adgang dag" → split på ':' → tag første del som int
+          ag1: >
+            {% set sel = states('input_select.techpoint_access_group_1') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+          ag2: >
+            {% set sel = states('input_select.techpoint_access_group_2') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+          ag3: >
+            {% set sel = states('input_select.techpoint_access_group_3') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(':') | first | int(0)) }}
+
+      # ── Trin 5: Tildel adgang ───────────────────────────────────────
+      - service: techpoint.access_update_cardholder
+        response_variable: access_response
+        data:
+          body:
+            id:
+              id: "{{ ch_id }}"
+            accessGroups: "{{ ([{'id': ag1}] if ag1 > 0 else []) + ([{'id': ag2}] if ag2 > 0 else []) + ([{'id': ag3}] if ag3 > 0 else []) }}"

@@ -6,19 +6,12 @@
       "unknown": "Oväntat fel"
     },
     "step": {
-      "cloud": {
+      "user": {
+        "title": "Lägg till TechPoint",
+        "description": "Välj hur du vill ansluta till TechPoint.",
         "data": {
-          "auth_type": "Autentiseringstyp (vanligtvis 2)",
-          "base_url": "Cloud-bas-URL (t.ex. https://example.azurewebsites.net)",
-          "device_id": "Enhets-ID",
-          "name": "Namn",
-          "password": "Lösenord",
-          "scan_interval": "Uppdateringsintervall (sekunder)",
-          "username": "Användarnamn",
-          "verify_ssl": "Verifiera SSL-certifikat"
-        },
-        "description": "Ange Cloud API-bas-URL, enhets-ID och inloggningsuppgifter. Integrationen autentiserar via JWT och vidarebefordrar anrop till det vanliga TechPoint Web API.",
-        "title": "TechPoint (Cloud)"
+          "mode": "Anslutningstyp"
+        }
       },
       "lan": {
         "data": {
@@ -33,12 +26,19 @@
         "description": "Ange bara IP/värd. Integrationen använder automatiskt /api/v1. Om styrenheten använder ett självsignerat certifikat, låt SSL-verifiering vara avstängd.",
         "title": "TechPoint (LAN)"
       },
-      "user": {
+      "cloud": {
         "data": {
-          "mode": "Anslutningstyp"
+          "auth_type": "Autentiseringstyp (vanligtvis 2)",
+          "base_url": "Cloud-bas-URL (t.ex. https://example.azurewebsites.net)",
+          "device_id": "Enhets-ID",
+          "name": "Namn",
+          "password": "Lösenord",
+          "scan_interval": "Uppdateringsintervall (sekunder)",
+          "username": "Användarnamn",
+          "verify_ssl": "Verifiera SSL-certifikat"
         },
-        "description": "Välj hur du vill ansluta till TechPoint.",
-        "title": "Lägg till TechPoint"
+        "description": "Ange Cloud API-bas-URL, enhets-ID och inloggningsuppgifter. Integrationen autentiserar via JWT och vidarebefordrar anrop till det vanliga TechPoint Web API.",
+        "title": "TechPoint (Cloud)"
       }
     }
   },

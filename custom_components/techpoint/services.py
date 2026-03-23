@@ -10,18 +10,27 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import DOMAIN
 
 
-def _get_entry(hass: HomeAssistant, entry_id: str) -> Dict[str, Any]:
+def _get_entry(hass: HomeAssistant, entry_id: str | None) -> Dict[str, Any]:
     dom = hass.data.get(DOMAIN) or {}
+    entry_ids = [k for k in dom if k != "_services_registered"]
+    if not entry_id:
+        if len(entry_ids) == 1:
+            return dom[entry_ids[0]]
+        if not entry_ids:
+            raise ValueError("No TechPoint integration found")
+        raise ValueError(
+            f"Multiple TechPoint entries found – please specify entry_id. Available: {entry_ids}"
+        )
     if entry_id not in dom:
-        raise ValueError("Unknown entry_id")
+        raise ValueError(f"Unknown entry_id: {entry_id!r}")
     return dom[entry_id]
 
 
-def _get_client(hass: HomeAssistant, entry_id: str):
+def _get_client(hass: HomeAssistant, entry_id: str | None):
     return _get_entry(hass, entry_id)["client"]
 
 
-def _get_coordinator(hass: HomeAssistant, entry_id: str):
+def _get_coordinator(hass: HomeAssistant, entry_id: str | None):
     return _get_entry(hass, entry_id)["coordinator"]
 
 
@@ -123,7 +132,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     # ---------- GENERIC ----------
     async def call_api(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.call_api(
             call.data["method"],
             call.data["path"],
@@ -134,14 +143,14 @@ async def async_register_services(hass: HomeAssistant) -> None:
         return {"result": res}
 
     async def get_cache(call: ServiceCall):
-        coord = _get_coordinator(hass, call.data["entry_id"])
+        coord = _get_coordinator(hass, call.data.get("entry_id"))
         snap = coord.data or {}
-        _fire(hass, f"{DOMAIN}_cache", {"entry_id": call.data["entry_id"], **snap})
+        _fire(hass, f"{DOMAIN}_cache", {"entry_id": call.data.get("entry_id"), **snap})
         return {"cache": snap}
 
     # ---------- DOORS ----------
     async def management_set_door_status(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.set_door_status(call.data["door_id"], call.data["status"])
         _fire(hass, f"{DOMAIN}_management_set_door_status_result", {"result": res})
         return {"result": res}
@@ -175,7 +184,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         return {"handled": handled}
 
     async def refresh(call: ServiceCall):
-        coord = _get_coordinator(hass, call.data["entry_id"])
+        coord = _get_coordinator(hass, call.data.get("entry_id"))
         await coord.async_request_refresh()
         return {"ok": True}
 
@@ -192,33 +201,36 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     # ---------- AIA ----------
     async def aia_update_zone(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.update_zone(call.data["zone_id"], call.data["body"])
         _fire(hass, f"{DOMAIN}_aia_update_zone_result", {"result": res})
         return {"result": res}
 
     async def aia_update_area(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.update_area(call.data["area_id"], call.data["body"])
         _fire(hass, f"{DOMAIN}_aia_update_area_result", {"result": res})
         return {"result": res}
 
     # ---------- ACCESS ----------
     async def access_get_groups(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
-        res = await client.get_access_groups()
-        _fire(hass, f"{DOMAIN}_access_get_groups_result", {"result": res})
-        return {"access_groups": res}
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_access_groups()
+            _fire(hass, f"{DOMAIN}_access_get_groups_result", {"result": res})
+            return {"access_groups": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
 
     async def access_get_static_types(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.get_card_option_types()
         _fire(hass, f"{DOMAIN}_access_get_static_types_result", {"result": res})
         return {"types": res}
 
     async def access_list_cardholders(call: ServiceCall):
         try:
-            client = _get_client(hass, call.data["entry_id"])
+            client = _get_client(hass, call.data.get("entry_id"))
             # /access/cardHolders (GET) expects a single parameter on many TechPoint versions.
             # Use the filter endpoint to list all cardholders.
             res = await client.list_card_holders_filter({"cardHolderFilter": {"limitCount": 1000, "skipCount": 0}})
@@ -229,7 +241,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     async def access_list_cardholders_filter(call: ServiceCall):
         try:
-            client = _get_client(hass, call.data["entry_id"])
+            client = _get_client(hass, call.data.get("entry_id"))
             flt = call.data["filter"]
             if isinstance(flt, dict) and "cardHolderFilter" not in flt:
                 flt = {"cardHolderFilter": flt}
@@ -241,7 +253,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     async def access_create_cardholder(call: ServiceCall):
         try:
-            client = _get_client(hass, call.data["entry_id"])
+            client = _get_client(hass, call.data.get("entry_id"))
             body = dict(call.data["body"] or {})
             body = await _ensure_cross_id_has_numeric_id(client, "cardholder", body)
             res = await client.create_card_holder(body)
@@ -251,26 +263,26 @@ async def async_register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError(str(e))
 
     async def access_update_cardholder(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.update_card_holder(call.data["body"])
         _fire(hass, f"{DOMAIN}_access_update_cardholder_result", {"result": res})
         return {"result": res}
 
     async def access_delete_cardholder(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.delete_card_holder(id=call.data.get("id"), ext_id=call.data.get("ext_id"))
         _fire(hass, f"{DOMAIN}_access_delete_cardholder_result", {"result": res})
         return {"result": res}
 
     async def access_list_cards(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.list_cards()
         _fire(hass, f"{DOMAIN}_access_list_cards_result", {"result": res})
         return {"cards": res}
 
     async def access_list_cards_filter(call: ServiceCall):
         try:
-            client = _get_client(hass, call.data["entry_id"])
+            client = _get_client(hass, call.data.get("entry_id"))
             flt = call.data["filter"]
             if isinstance(flt, dict) and "cardFilter" not in flt:
                 flt = {"cardFilter": flt}
@@ -282,7 +294,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     async def access_create_card(call: ServiceCall):
         try:
-            client = _get_client(hass, call.data["entry_id"])
+            client = _get_client(hass, call.data.get("entry_id"))
             body = dict(call.data["body"] or {})
             body = await _ensure_cross_id_has_numeric_id(client, "card", body)
             res = await client.create_card(body)
@@ -292,20 +304,21 @@ async def async_register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError(str(e))
 
     async def access_update_card(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.update_card(call.data["card_id"], call.data["body"])
         _fire(hass, f"{DOMAIN}_access_update_card_result", {"result": res})
         return {"result": res}
 
     async def access_delete_card(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        client = _get_client(hass, call.data.get("entry_id"))
         res = await client.delete_card(call.data["card_id"])
         _fire(hass, f"{DOMAIN}_access_delete_card_result", {"result": res})
         return {"result": res}
 
     # ---------- EVENTS ----------
     async def events_get(call: ServiceCall):
-        client = _get_client(hass, call.data["entry_id"])
+        entry_id = call.data.get("entry_id")
+        client = _get_client(hass, entry_id)
         res = await client.get_events(
             {
                 k: v
@@ -318,11 +331,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 if v not in (None, "")
             }
         )
-        coord = _get_coordinator(hass, call.data["entry_id"])
+        coord = _get_coordinator(hass, entry_id)
         if coord.data is None:
             coord.data = {}
         coord.data["events_recent"] = res or []
-        _fire(hass, f"{DOMAIN}_events", {"entry_id": call.data["entry_id"], "events": res})
+        _fire(hass, f"{DOMAIN}_events", {"entry_id": entry_id, "events": res})
         return {"events": res}
 
     # Register (with responses where useful)

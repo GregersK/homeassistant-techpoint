@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import DeviceContext, build_device_info
+from .device import make_device_context, build_device_info
 
 # Expose ARM_AWAY as supported feature (DISARM requires no flag)
 FEATURES = AlarmControlPanelEntityFeature.ARM_AWAY
@@ -75,7 +75,7 @@ class TechPointAreaAlarm(CoordinatorEntity, AlarmControlPanelEntity):
     @property
     def device_info(self) -> DeviceInfo:
         grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
-        ctx = DeviceContext(entry_id=self._entry_id, controller_name=self.coordinator.name)
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
         area = self._current() or {}
         base = area.get("name") or f"{self._area_id}"
         return build_device_info(ctx, grouping, "area", item_id=self._area_id, item_name=str(base))

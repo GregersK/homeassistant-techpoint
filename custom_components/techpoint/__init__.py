@@ -147,6 +147,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "coordinator": coordinator,
         "controller_identifier": (DOMAIN, entry.entry_id),
         "device_grouping": cfg.get(CONF_DEVICE_GROUPING, DEFAULT_DEVICE_GROUPING),
+        "manufacturer": MANUFACTURER,
+        "model_controller": MODEL_CONTROLLER,
     }
 
     # Real-time events via TechPoint WebHook (LAN only)

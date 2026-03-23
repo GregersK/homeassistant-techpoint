@@ -210,4 +210,3 @@ class TechPointOptionsFlowHandler(config_entries.OptionsFlow):
                 "auth_type": "None",
             },
         )
-
