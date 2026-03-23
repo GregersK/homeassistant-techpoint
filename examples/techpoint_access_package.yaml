@@ -6,11 +6,6 @@
 #     packages: !include_dir_named packages
 
 input_text:
-  techpoint_entry_id:
-    name: "TechPoint Entry ID"
-    icon: mdi:key
-    initial: ""
-
   # --- Kortindehaver ---
   techpoint_ch_firstname:
     name: "Fornavn"
@@ -39,19 +34,23 @@ input_text:
     icon: mdi:card-account-details
     initial: ""
 
-  # --- Adgang ---
+input_select:
+  # --- Adgangsgrupper (udfyldes via "Hent adgangsgrupper"-knappen) ---
   techpoint_access_group_1:
     name: "Adgangsgruppe 1"
+    options:
+      - "(ingen)"
     icon: mdi:door
-    initial: ""
   techpoint_access_group_2:
     name: "Adgangsgruppe 2"
+    options:
+      - "(ingen)"
     icon: mdi:door
-    initial: ""
   techpoint_access_group_3:
     name: "Adgangsgruppe 3"
+    options:
+      - "(ingen)"
     icon: mdi:door
-    initial: ""
 
 input_datetime:
   techpoint_card_valid_from:
@@ -64,17 +63,43 @@ input_datetime:
     has_time: true
 
 script:
+  # ── Hent adgangsgrupper fra TechPoint og udfyld dropdowns ──────────
+  techpoint_load_access_groups:
+    alias: "TechPoint: Hent adgangsgrupper"
+    icon: mdi:refresh
+    sequence:
+      - service: techpoint.access_get_groups
+        response_variable: resp
+      - variables:
+          # Byg liste: ["(ingen)", "3 – Adgang dag", "5 – Adgang nat", ...]
+          opts: >
+            {% set groups = resp['access_groups'] %}
+            {% set ns = namespace(items=['(ingen)']) %}
+            {% for g in groups %}
+              {% set gid = g['id']['id'] if g.get('id') is mapping else g.get('id') %}
+              {% set gname = g.get('name', '(ukendt)') %}
+              {% set ns.items = ns.items + [gid | string + ' \u2013 ' + gname] %}
+            {% endfor %}
+            {{ ns.items }}
+      - service: input_select.set_options
+        target:
+          entity_id:
+            - input_select.techpoint_access_group_1
+            - input_select.techpoint_access_group_2
+            - input_select.techpoint_access_group_3
+        data:
+          options: "{{ opts }}"
+
+  # ── Opret kortindehaver, kort & tildel adgang ───────────────────────
   techpoint_full_flow:
     alias: "TechPoint: Opret kortindehaver, kort & tildel adgang"
     icon: mdi:shield-account-outline
     sequence:
 
       # ── Trin 1: Opret kortindehaver ─────────────────────────────────
-      # body er et inline YAML-objekt – HA evaluerer hvert felt som template
       - service: techpoint.access_create_cardholder
         response_variable: ch_response
         data:
-          entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             firstName: "{{ states('input_text.techpoint_ch_firstname') }}"
             lastName: "{{ states('input_text.techpoint_ch_lastname') }}"
@@ -91,7 +116,6 @@ script:
       - service: techpoint.access_create_card
         response_variable: card_response
         data:
-          entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             number: "{{ states('input_text.techpoint_card_number') }}"
             cardHolderID:
@@ -100,17 +124,23 @@ script:
             validTo: "{{ states('input_datetime.techpoint_card_valid_to') | replace(' ', 'T') }}Z"
             active: true
 
-      # ── Trin 4: Gem adgangsgruppe-IDs ──────────────────────────────
+      # ── Trin 4: Udled adgangsgruppe-IDs fra valgte dropdowns ────────
       - variables:
-          ag1: "{{ states('input_text.techpoint_access_group_1') | int(0) }}"
-          ag2: "{{ states('input_text.techpoint_access_group_2') | int(0) }}"
-          ag3: "{{ states('input_text.techpoint_access_group_3') | int(0) }}"
+          # Format i dropdown: "3 – Adgang dag" → split på ' – ' → tag første del som int
+          ag1: >
+            {% set sel = states('input_select.techpoint_access_group_1') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
+          ag2: >
+            {% set sel = states('input_select.techpoint_access_group_2') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
+          ag3: >
+            {% set sel = states('input_select.techpoint_access_group_3') %}
+            {{ 0 if sel == '(ingen)' else (sel.split(' \u2013 ') | first | int(0)) }}
 
       # ── Trin 5: Tildel adgang ───────────────────────────────────────
       - service: techpoint.access_update_cardholder
         response_variable: access_response
         data:
-          entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             id:
               id: "{{ ch_id }}"

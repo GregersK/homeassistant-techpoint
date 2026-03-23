@@ -9,14 +9,6 @@ views:
     icon: mdi:shield-key
     cards:
 
-      # ── Entry ID ────────────────────────────────────────────────────
-      - type: entities
-        title: Konfiguration
-        icon: mdi:cog
-        entities:
-          - entity: input_text.techpoint_entry_id
-            name: Entry ID
-
       # ── Kortindehaver ───────────────────────────────────────────────
       - type: entities
         title: Kortindehaver
@@ -50,14 +42,20 @@ views:
         title: Adgangsgrupper
         icon: mdi:door-open
         entities:
-          - entity: input_text.techpoint_access_group_1
+          - entity: input_select.techpoint_access_group_1
             name: Adgangsgruppe 1
-          - entity: input_text.techpoint_access_group_2
+          - entity: input_select.techpoint_access_group_2
             name: Adgangsgruppe 2
-          - entity: input_text.techpoint_access_group_3
+          - entity: input_select.techpoint_access_group_3
             name: Adgangsgruppe 3
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_access_groups
+              name: Hent adgangsgrupper
+              icon: mdi:refresh
 
-      # ── Knap ────────────────────────────────────────────────────────
+      # ── Knapper ─────────────────────────────────────────────────────
       - type: button
         name: Opret kortindehaver, kort & tildel adgang
         icon: mdi:shield-plus
