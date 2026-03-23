@@ -1,9 +1,7 @@
 # TechPoint Adgangsstyring – Lovelace Dashboard
 #
 # Tilføj via HA UI:
-#   Settings → Dashboards → Add Dashboard → From YAML (eller raw config editor)
-#
-# Kræver at techpoint_access_package.yaml er sat op og HA genstartet.
+#   Settings → Dashboards → Add Dashboard → (raw config editor)
 
 title: TechPoint Adgang
 views:
@@ -11,7 +9,7 @@ views:
     icon: mdi:shield-key
     cards:
 
-      # ── Konfiguration ───────────────────────────────────────────────
+      # ── Entry ID ────────────────────────────────────────────────────
       - type: entities
         title: Konfiguration
         icon: mdi:cog
@@ -19,52 +17,39 @@ views:
           - entity: input_text.techpoint_entry_id
             name: Entry ID
 
-      # ── Opret kortindehaver ─────────────────────────────────────────
+      # ── Kortindehaver ───────────────────────────────────────────────
       - type: entities
-        title: "1. Opret kortindehaver"
-        icon: mdi:account-plus
+        title: Kortindehaver
+        icon: mdi:account
         entities:
           - entity: input_text.techpoint_ch_firstname
+            name: Fornavn
           - entity: input_text.techpoint_ch_lastname
+            name: Efternavn
           - entity: input_text.techpoint_ch_email
+            name: Email
           - entity: input_text.techpoint_ch_phone
+            name: Telefon
           - entity: input_text.techpoint_ch_ext_id
+            name: Eksternt ID (valgfrit)
 
-      - type: button
-        name: Opret kortindehaver
-        icon: mdi:account-plus
-        tap_action:
-          action: call-service
-          service: script.techpoint_create_cardholder
-
-      # ── Opret kort ──────────────────────────────────────────────────
+      # ── Kort ────────────────────────────────────────────────────────
       - type: entities
-        title: "2. Opret kort"
-        icon: mdi:card-plus
+        title: Kort
+        icon: mdi:card-account-details
         entities:
           - entity: input_text.techpoint_card_number
             name: Kortnummer
-          - entity: input_text.techpoint_card_holder_id
-            name: Kortindehaver ID
           - entity: input_datetime.techpoint_card_valid_from
             name: Gyldig fra
           - entity: input_datetime.techpoint_card_valid_to
             name: Gyldig til
 
-      - type: button
-        name: Opret kort
-        icon: mdi:card-plus
-        tap_action:
-          action: call-service
-          service: script.techpoint_create_card
-
-      # ── Tildel adgang ───────────────────────────────────────────────
+      # ── Adgangsgrupper ──────────────────────────────────────────────
       - type: entities
-        title: "3. Tildel adgang"
-        icon: mdi:shield-account
+        title: Adgangsgrupper
+        icon: mdi:door-open
         entities:
-          - entity: input_text.techpoint_access_ch_id
-            name: Kortindehaver ID
           - entity: input_text.techpoint_access_group_1
             name: Adgangsgruppe 1
           - entity: input_text.techpoint_access_group_2
@@ -72,9 +57,10 @@ views:
           - entity: input_text.techpoint_access_group_3
             name: Adgangsgruppe 3
 
+      # ── Knap ────────────────────────────────────────────────────────
       - type: button
-        name: Tildel adgang
-        icon: mdi:shield-account
+        name: Opret kortindehaver, kort & tildel adgang
+        icon: mdi:shield-plus
         tap_action:
           action: call-service
-          service: script.techpoint_assign_access
+          service: script.techpoint_full_flow

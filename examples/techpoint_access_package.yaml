@@ -1,8 +1,6 @@
 # TechPoint Access Management – HA Package
 #
 # Kopiér til din HA config/packages/techpoint_access.yaml
-# Sæt dit rigtige Entry ID i input_text.techpoint_entry_id (Settings → Devices & Services → TechPoint → ...)
-#
 # Husk at aktivere packages i configuration.yaml:
 #   homeassistant:
 #     packages: !include_dir_named packages
@@ -11,45 +9,49 @@ input_text:
   techpoint_entry_id:
     name: "TechPoint Entry ID"
     icon: mdi:key
+    initial: ""
 
   # --- Kortindehaver ---
   techpoint_ch_firstname:
     name: "Fornavn"
     icon: mdi:account
+    initial: ""
   techpoint_ch_lastname:
     name: "Efternavn"
     icon: mdi:account
+    initial: ""
   techpoint_ch_email:
     name: "Email"
     icon: mdi:email
+    initial: ""
   techpoint_ch_phone:
     name: "Telefon"
     icon: mdi:phone
+    initial: ""
   techpoint_ch_ext_id:
     name: "Eksternt ID (valgfrit)"
     icon: mdi:identifier
+    initial: ""
 
   # --- Kort ---
   techpoint_card_number:
     name: "Kortnummer"
     icon: mdi:card-account-details
-  techpoint_card_holder_id:
-    name: "Kortindehaver ID"
-    icon: mdi:account-key
+    initial: ""
 
-  # --- Tildel adgang ---
-  techpoint_access_ch_id:
-    name: "Kortindehaver ID (adgang)"
-    icon: mdi:account-key
+  # --- Adgang ---
   techpoint_access_group_1:
     name: "Adgangsgruppe 1"
     icon: mdi:door
+    initial: ""
   techpoint_access_group_2:
     name: "Adgangsgruppe 2"
     icon: mdi:door
+    initial: ""
   techpoint_access_group_3:
     name: "Adgangsgruppe 3"
     icon: mdi:door
+    initial: ""
 
 input_datetime:
   techpoint_card_valid_from:
@@ -62,12 +64,14 @@ input_datetime:
     has_time: true
 
 script:
-  techpoint_create_cardholder:
-    alias: "TechPoint: Opret kortindehaver"
-    icon: mdi:account-plus
+  techpoint_full_flow:
+    alias: "TechPoint: Opret kortindehaver, kort & tildel adgang"
+    icon: mdi:shield-account-outline
     sequence:
+
+      # ── Trin 1: Byg cardholder-body ────────────────────────────────
       - variables:
-          body: >
+          ch_body: >
             {% set b = {
               "firstName": states('input_text.techpoint_ch_firstname'),
               "lastName": states('input_text.techpoint_ch_lastname')
@@ -82,30 +86,28 @@ script:
               {% set b = dict(b, **{"id": {"extId": states('input_text.techpoint_ch_ext_id')}}) %}
             {% endif %}
             {{ b }}
+
+      # ── Trin 2: Opret kortindehaver ─────────────────────────────────
       - service: techpoint.access_create_cardholder
+        response_variable: ch_response
         data:
           entry_id: "{{ states('input_text.techpoint_entry_id') }}"
-          body: "{{ body }}"
+          body: "{{ ch_body }}"
 
-  techpoint_create_card:
-    alias: "TechPoint: Opret kort"
-    icon: mdi:card-plus
-    sequence:
+      # ── Trin 3: Opret kort med kortindehaver-ID fra svaret ──────────
       - service: techpoint.access_create_card
+        response_variable: card_response
         data:
           entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             number: "{{ states('input_text.techpoint_card_number') }}"
             cardHolderID:
-              id: "{{ states('input_text.techpoint_card_holder_id') | int }}"
+              id: "{{ ch_response['result']['id']['id'] }}"
             validFrom: "{{ (states('input_datetime.techpoint_card_valid_from') | as_datetime).isoformat() }}"
             validTo: "{{ (states('input_datetime.techpoint_card_valid_to') | as_datetime).isoformat() }}"
             active: true
 
-  techpoint_assign_access:
-    alias: "TechPoint: Tildel adgang"
-    icon: mdi:shield-account
-    sequence:
+      # ── Trin 4: Byg adgangsgruppe-liste og tildel adgang ───────────
       - variables:
           access_groups: >
             {% set groups = [] %}
@@ -119,10 +121,12 @@ script:
               {% set groups = groups + [{"id": states('input_text.techpoint_access_group_3') | int}] %}
             {% endif %}
             {{ groups }}
+
       - service: techpoint.access_update_cardholder
+        response_variable: access_response
         data:
           entry_id: "{{ states('input_text.techpoint_entry_id') }}"
           body:
             id:
-              id: "{{ states('input_text.techpoint_access_ch_id') | int }}"
+              id: "{{ ch_response['result']['id']['id'] }}"
             accessGroups: "{{ access_groups }}"
