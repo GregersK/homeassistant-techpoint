@@ -257,8 +257,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
             body = dict(call.data["body"] or {})
             body = await _ensure_cross_id_has_numeric_id(client, "cardholder", body)
             res = await client.create_card_holder(body)
+            # Normalisér ID: prøv svaret først, fall back til det vi sendte
+            ch_id = _int_id_local(res) or _int_id_local(body)
             _fire(hass, f"{DOMAIN}_access_create_cardholder_result", {"result": res})
-            return {"result": res}
+            return {"result": res, "cardholder_id": ch_id}
         except Exception as e:
             raise HomeAssistantError(str(e))
 
@@ -298,8 +300,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
             body = dict(call.data["body"] or {})
             body = await _ensure_cross_id_has_numeric_id(client, "card", body)
             res = await client.create_card(body)
+            card_id = _int_id_local(res) or _int_id_local(body)
             _fire(hass, f"{DOMAIN}_access_create_card_result", {"result": res})
-            return {"result": res}
+            return {"result": res, "card_id": card_id}
         except Exception as e:
             raise HomeAssistantError(str(e))
 

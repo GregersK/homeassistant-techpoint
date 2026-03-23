@@ -110,7 +110,7 @@ script:
 
       # ── Trin 2: Gem kortindehaver-ID fra svar ───────────────────────
       - variables:
-          ch_id: "{{ ch_response['result']['id']['id'] }}"
+          ch_id: "{{ ch_response['cardholder_id'] }}"
 
       # ── Trin 3: Opret kort ──────────────────────────────────────────
       - service: techpoint.access_create_card
