@@ -107,24 +107,42 @@ script:
     icon: mdi:account-multiple
     sequence:
       - service: techpoint.access_list_cardholders
-        response_variable: resp
+        response_variable: ch_resp
+      - service: techpoint.access_list_cards
+        response_variable: card_resp
       - service: input_select.set_options
         target:
           entity_id: input_select.techpoint_cardholder_list
         data:
-          # Format: "ch_id:card_id:Name" – parsed by management scripts
+          # Format: "ch_id:card_id:Name (card_num)" – parsed by management scripts
           options: >
-            {% set chs = resp.get('cardholders', []) %}
+            {% set chs = ch_resp.get('cardholders', []) %}
+            {% set cards = card_resp.get('cards', []) %}
             {% set ns = namespace(items=['(none)']) %}
             {% for ch in chs %}
               {% set raw_id = ch.get('id') %}
               {% set ch_id = raw_id.get('id', 0) if raw_id is mapping else (raw_id | int(0)) %}
-              {% set fn = ch.get('firstName', '') %}
-              {% set ln = ch.get('lastName', '') %}
-              {% set ids = ch.get('cardIDs', {}).get('ids', []) %}
-              {% set card_id = ids[0].get('id', 0) if ids else 0 %}
               {% if ch_id > 0 %}
-                {% set ns.items = ns.items + [ch_id|string + ':' + card_id|string + ':' + (fn + ' ' + ln).strip()] %}
+                {% set fn = ch.get('firstName', '') %}
+                {% set ln = ch.get('lastName', '') %}
+                {% set card_ids = ch.get('cardIDs', {}).get('ids', []) %}
+                {% set first_card_id = card_ids[0].get('id', 0) if card_ids else 0 %}
+                {% set ns2 = namespace(nums=[]) %}
+                {% for cid_obj in card_ids %}
+                  {% set this_cid = cid_obj.get('id', 0) %}
+                  {% for c in cards %}
+                    {% set craw = c.get('id') %}
+                    {% set c_id_val = craw.get('id') if craw is mapping else (craw | int(0)) %}
+                    {% if c_id_val == this_cid and c.get('number') %}
+                      {% set ns2.nums = ns2.nums + [c.get('number') | string] %}
+                    {% endif %}
+                  {% endfor %}
+                {% endfor %}
+                {% set label = (fn + ' ' + ln).strip() %}
+                {% if ns2.nums %}
+                  {% set label = label + ' (' + ns2.nums | join(', ') + ')' %}
+                {% endif %}
+                {% set ns.items = ns.items + [ch_id|string + ':' + first_card_id|string + ':' + label] %}
               {% endif %}
             {% endfor %}
             {{ ns.items }}
@@ -179,6 +197,7 @@ script:
       # ── Step 5: Update card with access group links ──────────────
       # Access groups live on the card (accessGroupLinks), not the cardholder
       - service: techpoint.access_update_card
+        response_variable: _update_response
         data:
           card_id: "{{ card_response['card_id'] }}"
           body:
@@ -227,6 +246,7 @@ script:
 
       # Update cardholder expiry
       - service: techpoint.access_update_cardholder
+        response_variable: _ch_update_response
         data:
           body:
             id:
@@ -240,6 +260,7 @@ script:
                 value_template: "{{ card_id > 0 }}"
             sequence:
               - service: techpoint.access_update_card
+                response_variable: _card_update_response
                 data:
                   card_id: "{{ card_id }}"
                   body:
