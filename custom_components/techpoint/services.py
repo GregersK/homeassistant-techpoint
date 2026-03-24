@@ -311,10 +311,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError(str(e))
 
     async def access_update_card(call: ServiceCall):
-        client = _get_client(hass, call.data.get("entry_id"))
-        res = await client.update_card(call.data["card_id"], call.data["body"])
-        _fire(hass, f"{DOMAIN}_access_update_card_result", {"result": res})
-        return {"result": res}
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            body = dict(call.data.get("body") or {})
+            if "number" in body and body["number"] is not None:
+                body["number"] = str(body["number"])
+            res = await client.update_card(call.data["card_id"], body)
+            _fire(hass, f"{DOMAIN}_access_update_card_result", {"result": res})
+            return {"result": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
 
     async def access_delete_card(call: ServiceCall):
         client = _get_client(hass, call.data.get("entry_id"))

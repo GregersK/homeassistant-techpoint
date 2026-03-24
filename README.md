@@ -99,21 +99,66 @@ The integration provides the following custom services:
 | `techpoint.aia_update_area` | Update an intrusion area |
 | `techpoint.access_list_cardholders` | List access cardholders |
 | `techpoint.access_list_cardholders_filter` | Filter cardholders |
-| `techpoint.access_create_cardholder` | Create a new cardholder |
+| `techpoint.access_create_cardholder` | Create a new cardholder — returns `cardholder_id` |
 | `techpoint.access_update_cardholder` | Update a cardholder |
 | `techpoint.access_delete_cardholder` | Delete a cardholder |
 | `techpoint.access_list_cards` | List access cards |
 | `techpoint.access_list_cards_filter` | Filter access cards |
-| `techpoint.access_create_card` | Create an access card |
-| `techpoint.access_update_card` | Update an access card |
+| `techpoint.access_create_card` | Create an access card — returns `card_id` |
+| `techpoint.access_update_card` | Update an access card (use `accessGroupLinks` to assign access groups) |
 | `techpoint.access_delete_card` | Delete an access card |
-| `techpoint.access_get_groups` | List access groups |
+| `techpoint.access_get_groups` | List access groups — returns `access_groups` list |
 | `techpoint.events_get` | Query events with optional filters |
 | `techpoint.call_api` | Call any TechPoint API endpoint directly |
 | `techpoint.refresh` | Trigger an immediate data refresh |
 | `techpoint.cleanup_orphan_devices` | Remove legacy orphan devices |
 
 See `custom_components/techpoint/services.yaml` for full parameter documentation.
+
+> **Note:** The `entry_id` parameter is optional for all services. When only one TechPoint integration instance is configured, it is detected automatically.
+
+## Access Management Package
+
+The `examples/` directory contains a ready-to-use HA package for full cardholder and access management via the UI.
+
+### Setup
+
+1. Copy `examples/techpoint_access_package.yaml` to `config/packages/techpoint_access.yaml`
+2. Enable packages in `configuration.yaml`:
+   ```yaml
+   homeassistant:
+     packages: !include_dir_named packages
+   ```
+3. Restart Home Assistant
+4. Copy the dashboard from `examples/techpoint_access_dashboard.yaml` into a new Lovelace dashboard (Settings → Dashboards → Add → raw config editor)
+
+### Creating a cardholder with access
+
+1. Fill in the **Cardholder** fields (first name, last name, email, phone)
+2. Enter a **Card number** (decimal or hex, e.g. `1234ABCD`)
+3. Set **Valid from** and **Valid to** dates
+4. Click **Load access groups** to populate the dropdowns
+5. Select up to 3 **Access groups**
+6. Click **Create cardholder, card & assign access**
+
+A persistent notification confirms success.
+
+### Managing existing cardholders
+
+1. Click **Load cardholders** in the "Manage cardholder" section
+2. Select a cardholder from the dropdown
+3. Set a new **Valid to** date and/or change the **Access groups**
+4. Click **Update** to save, or **Delete** to remove the cardholder and their linked card
+
+### Scripts provided
+
+| Script | Description |
+|---|---|
+| `script.techpoint_load_access_groups` | Fetch access groups from TechPoint and populate the three dropdowns |
+| `script.techpoint_load_cardholders` | Fetch all cardholders and populate the management dropdown |
+| `script.techpoint_full_flow` | Create cardholder + card and assign access groups in one step |
+| `script.techpoint_update_selected` | Update expiry date and access groups for the selected cardholder |
+| `script.techpoint_delete_selected` | Delete the selected cardholder and their linked card |
 
 ## Real-time Events (LAN Only)
 
