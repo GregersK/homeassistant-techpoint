@@ -9,16 +9,26 @@ on:
       - main
   schedule:
     - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "Enable debug output"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   validate-hacs:
     name: HACS Validation
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.hacs.outcome }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: HACS Action
+        id: hacs
         uses: hacs/action@main
         with:
           category: integration
@@ -26,9 +36,27 @@ jobs:
   validate-hassfest:
     name: Hassfest Validation
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.hassfest.outcome }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Hassfest
+        id: hassfest
         uses: home-assistant/actions/hassfest@master
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-hacs, validate-hassfest]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          echo "### Validation results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| HACS | ${{ needs.validate-hacs.outputs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Hassfest | ${{ needs.validate-hassfest.outputs.result }} |" >> $GITHUB_STEP_SUMMARY
