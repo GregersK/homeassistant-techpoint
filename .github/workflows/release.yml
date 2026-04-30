@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.6.1) — must match manifest.json"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: "Publish as draft (review before going live)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      release_url: ${{ steps.create_release.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version and tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify manifest version matches
+        run: |
+          MANIFEST_VERSION=$(jq -r '.version' custom_components/techpoint/manifest.json)
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: manifest.json version ($MANIFEST_VERSION) does not match release version ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Build release zip
+        run: |
+          zip -r techpoint.zip custom_components/techpoint/
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES=$(awk "/^## \[?v?${VERSION}\]?/,/^## \[?v?[0-9]/" CHANGELOG.md | head -n -1 | tail -n +2)
+          if [ -z "$NOTES" ]; then
+            NOTES="See [CHANGELOG.md](CHANGELOG.md) for details."
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "TechPoint ${{ steps.version.outputs.tag }}"
+          body: ${{ steps.changelog.outputs.notes }}
+          files: techpoint.zip
+          draft: ${{ inputs.draft || false }}
+          prerelease: ${{ inputs.prerelease || false }}
+
+      - name: Summary
+        run: |
+          echo "### Release published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pre-release**: ${{ inputs.prerelease || false }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Draft**: ${{ inputs.draft || false }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY

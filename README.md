@@ -2,7 +2,7 @@
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2024.1-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
@@ -108,6 +108,13 @@ The integration provides the following custom services:
 | `techpoint.access_update_card` | Update an access card (use `accessGroupLinks` to assign access groups) |
 | `techpoint.access_delete_card` | Delete an access card |
 | `techpoint.access_get_groups` | List access groups — returns `access_groups` list |
+| `techpoint.management_get_global_door_control` | Get global door control state — returns `active` (bool) |
+| `techpoint.management_set_global_door_control` | Open or close all globally-controlled doors (`active: true/false`) |
+| `techpoint.management_get_threat_level` | Get current threat level — returns `level` (0–4) |
+| `techpoint.management_set_threat_level` | Set threat level (0=off, 1=normal, 2–4=level 1–3) |
+| `techpoint.config_get_io_inputs` | List user-defined inputs with state — returns `inputs` list |
+| `techpoint.config_get_io_outputs` | List user-defined outputs with state — returns `outputs` list |
+| `techpoint.config_set_io_userdefined` | Set active (2) or passive (0) state on user-defined I/O |
 | `techpoint.events_get` | Query events with optional filters |
 | `techpoint.call_api` | Call any TechPoint API endpoint directly |
 | `techpoint.refresh` | Trigger an immediate data refresh |

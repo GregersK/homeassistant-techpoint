@@ -328,6 +328,67 @@ async def async_register_services(hass: HomeAssistant) -> None:
         _fire(hass, f"{DOMAIN}_access_delete_card_result", {"result": res})
         return {"result": res}
 
+    # ---------- GLOBAL DOOR CONTROL (v1.13.0) ----------
+    async def management_get_global_door_control(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_global_door_control()
+            active = (res or {}).get("status", {}).get("active")
+            return {"result": res, "active": active}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    async def management_set_global_door_control(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.set_global_door_control(bool(call.data["active"]))
+            return {"result": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    # ---------- THREAT LEVEL (v1.13.0) ----------
+    async def management_get_threat_level(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_threat_level()
+            level = (res or {}).get("currentThreatLevel", {}).get("level")
+            return {"result": res, "level": level}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    async def management_set_threat_level(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.set_threat_level(int(call.data["level"]))
+            return {"result": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    # ---------- USER-DEFINED I/O (v1.13.0) ----------
+    async def config_get_io_inputs(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_io_userdefined(28)
+            return {"inputs": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    async def config_get_io_outputs(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.get_io_userdefined(29)
+            return {"outputs": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
+    async def config_set_io_userdefined(call: ServiceCall):
+        try:
+            client = _get_client(hass, call.data.get("entry_id"))
+            res = await client.set_io_userdefined(call.data["body"])
+            return {"result": res}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
+
     # ---------- EVENTS ----------
     async def events_get(call: ServiceCall):
         entry_id = call.data.get("entry_id")
@@ -381,6 +442,16 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     hass.services.async_register(DOMAIN, "events_get", events_get, supports_response=SupportsResponse.ONLY)
 
+    hass.services.async_register(DOMAIN, "management_get_global_door_control", management_get_global_door_control, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "management_set_global_door_control", management_set_global_door_control, supports_response=SupportsResponse.ONLY)
+
+    hass.services.async_register(DOMAIN, "management_get_threat_level", management_get_threat_level, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "management_set_threat_level", management_set_threat_level, supports_response=SupportsResponse.ONLY)
+
+    hass.services.async_register(DOMAIN, "config_get_io_inputs", config_get_io_inputs, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "config_get_io_outputs", config_get_io_outputs, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "config_set_io_userdefined", config_set_io_userdefined, supports_response=SupportsResponse.ONLY)
+
 
 async def async_unregister_services(hass: HomeAssistant) -> None:
     for name in [
@@ -405,6 +476,13 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
         "access_update_card",
         "access_delete_card",
         "events_get",
+        "management_get_global_door_control",
+        "management_set_global_door_control",
+        "management_get_threat_level",
+        "management_set_threat_level",
+        "config_get_io_inputs",
+        "config_get_io_outputs",
+        "config_set_io_userdefined",
     ]:
         if hass.services.has_service(DOMAIN, name):
             hass.services.async_remove(DOMAIN, name)
