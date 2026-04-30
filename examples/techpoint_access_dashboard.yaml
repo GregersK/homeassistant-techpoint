@@ -6,90 +6,121 @@
 #
 # Requires: examples/techpoint_access_package.yaml loaded as a package.
 
-title: TechPoint Access
-views:
-  - title: Access Management
-    icon: mdi:shield-key
+title: Access Management
+icon: mdi:shield-key
+cards:
+
+  # ── Cardholder ───────────────────────────────────────────────────
+  - type: entities
+    title: Cardholder
+    icon: mdi:account
+    entities:
+      - entity: input_text.techpoint_ch_firstname
+        name: First name
+      - entity: input_text.techpoint_ch_lastname
+        name: Last name
+      - entity: input_text.techpoint_ch_ext_id
+        name: External ID (optional)
+
+  # ── Card ─────────────────────────────────────────────────────────
+  - type: entities
+    title: Card
+    icon: mdi:card-account-details
+    entities:
+      - entity: input_text.techpoint_card_number
+        name: Card number
+      - entity: input_datetime.techpoint_card_valid_from
+        name: Valid from
+      - entity: input_datetime.techpoint_card_valid_to
+        name: Valid to
+
+  # ── Access groups ────────────────────────────────────────────────
+  - type: entities
+    title: Access groups
+    icon: mdi:door-open
+    entities:
+      - entity: input_select.techpoint_access_group_1
+        name: Access group 1
+      - entity: input_select.techpoint_access_group_2
+        name: Access group 2
+      - entity: input_select.techpoint_access_group_3
+        name: Access group 3
+    footer:
+      type: buttons
+      entities:
+        - entity: script.techpoint_load_access_groups
+          name: Load access groups
+          icon: mdi:refresh
+
+  # ── Create ───────────────────────────────────────────────────────
+  - type: button
+    name: Create cardholder, card & assign access
+    icon: mdi:shield-plus
+    tap_action:
+      action: perform-action
+      perform_action: script.turn_on
+      target:
+        entity_id: script.techpoint_full_flow
+
+  # ── Manage existing cardholders ──────────────────────────────────
+  - type: entities
+    title: Manage cardholder
+    icon: mdi:account-edit
+    entities:
+      - entity: input_select.techpoint_cardholder_list
+        name: Cardholder
+      - entity: input_datetime.techpoint_manage_valid_to
+        name: New valid to
+      - entity: input_select.techpoint_access_group_1
+        name: Access group 1
+      - entity: input_select.techpoint_access_group_2
+        name: Access group 2
+      - entity: input_select.techpoint_access_group_3
+        name: Access group 3
+    footer:
+      type: buttons
+      entities:
+        - entity: script.techpoint_load_cardholders
+          name: Load cardholders
+          icon: mdi:account-multiple
+        - entity: script.techpoint_update_selected
+          name: Update
+          icon: mdi:content-save
+        - entity: script.techpoint_delete_selected
+          name: Delete
+          icon: mdi:account-remove
+
+  # ── System control ───────────────────────────────────────────────
+  - type: entities
+    title: System control
+    icon: mdi:security
+    entities:
+      - entity: input_select.techpoint_threat_level
+        name: Threat level
+    footer:
+      type: buttons
+      entities:
+        - entity: script.techpoint_apply_threat_level
+          name: Apply threat level
+          icon: mdi:alert-circle
+
+  - type: horizontal-stack
     cards:
-
-      # ── Cardholder ───────────────────────────────────────────────────
-      - type: entities
-        title: Cardholder
-        icon: mdi:account
-        entities:
-          - entity: input_text.techpoint_ch_firstname
-            name: First name
-          - entity: input_text.techpoint_ch_lastname
-            name: Last name
-          - entity: input_text.techpoint_ch_email
-            name: Email
-          - entity: input_text.techpoint_ch_phone
-            name: Phone
-          - entity: input_text.techpoint_ch_ext_id
-            name: External ID (optional)
-
-      # ── Card ─────────────────────────────────────────────────────────
-      - type: entities
-        title: Card
-        icon: mdi:card-account-details
-        entities:
-          - entity: input_text.techpoint_card_number
-            name: Card number
-          - entity: input_datetime.techpoint_card_valid_from
-            name: Valid from
-          - entity: input_datetime.techpoint_card_valid_to
-            name: Valid to
-
-      # ── Access groups ────────────────────────────────────────────────
-      - type: entities
-        title: Access groups
-        icon: mdi:door-open
-        entities:
-          - entity: input_select.techpoint_access_group_1
-            name: Access group 1
-          - entity: input_select.techpoint_access_group_2
-            name: Access group 2
-          - entity: input_select.techpoint_access_group_3
-            name: Access group 3
-        footer:
-          type: buttons
-          entities:
-            - entity: script.techpoint_load_access_groups
-              name: Load access groups
-              icon: mdi:refresh
-
-      # ── Create ───────────────────────────────────────────────────────
       - type: button
-        name: Create cardholder, card & assign access
-        icon: mdi:shield-plus
+        name: Open all doors
+        icon: mdi:door-open
+        icon_height: 40px
         tap_action:
-          action: call-service
-          service: script.techpoint_full_flow
-
-      # ── Manage existing cardholders ──────────────────────────────────
-      - type: entities
-        title: Manage cardholder
-        icon: mdi:account-edit
-        entities:
-          - entity: input_select.techpoint_cardholder_list
-            name: Cardholder
-          - entity: input_datetime.techpoint_manage_valid_to
-            name: New valid to
-          - entity: input_select.techpoint_access_group_1
-            name: Access group 1
-          - entity: input_select.techpoint_access_group_2
-            name: Access group 2
-          - entity: input_select.techpoint_access_group_3
-            name: Access group 3
-        footer:
-          type: buttons
-          entities:
-            - entity: script.techpoint_load_cardholders
-              name: Load cardholders
-              icon: mdi:account-multiple
-            - entity: script.techpoint_update_selected
-              name: Update
-              icon: mdi:content-save
-            - entity: script.techpoint_delete_selected
-              name: Delete
-              icon: mdi:account-remove
+          action: perform-action
+          perform_action: script.turn_on
+          target:
+            entity_id: script.techpoint_global_door_open
+      - type: button
+        name: Release door control
+        icon: mdi:door-closed
+        icon_height: 40px
+        tap_action:
+          action: perform-action
+          perform_action: script.turn_on
+          target:
+            entity_id: script.techpoint_global_door_release
