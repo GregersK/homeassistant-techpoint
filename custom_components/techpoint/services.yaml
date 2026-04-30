@@ -239,6 +239,85 @@ access_delete_card:
         number:
           min: 1
 
+management_get_global_door_control:
+  name: Get global door control
+  description: "GET /access/globalDoorControl – fetch current state. Returns: active (bool)."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+
+management_set_global_door_control:
+  name: Set global door control
+  description: "POST /access/globalDoorControl – open (active: true) or release (active: false) all doors with global control enabled."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+    active:
+      required: true
+      selector:
+        boolean: {}
+
+management_get_threat_level:
+  name: Get threat level
+  description: "GET /management/threatLevel – fetch current threat level. Returns: level (0=off, 1=normal, 2–4=level 1–3)."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+
+management_set_threat_level:
+  name: Set threat level
+  description: "POST /management/threatLevel – set threat level (0=off, 1=normal, 2=level 1, 3=level 2, 4=level 3)."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+    level:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+
+config_get_io_inputs:
+  name: Get user-defined inputs
+  description: "GET /config/io/userdefined?ioType=28 – fetch all user-defined inputs and their state (0=passive, 2=active). Returns: inputs list."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+
+config_get_io_outputs:
+  name: Get user-defined outputs
+  description: "GET /config/io/userdefined?ioType=29 – fetch all user-defined outputs and their state (0=passive, 2=active). Returns: outputs list."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+
+config_set_io_userdefined:
+  name: Set user-defined I/O state
+  description: "POST /config/io/userdefined – set active (2) or passive (0) state for one or more user-defined inputs or outputs."
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+    body:
+      required: true
+      example: '{"ids": [{"id": "0", "status": 2}]}'
+      selector:
+        object: {}
+
 events_get:
   name: Get events
   description: GET /events

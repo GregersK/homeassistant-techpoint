@@ -27,6 +27,9 @@ from ..endpoints_lan import (
     PATH_CARDS_FILTER,
     PATH_EVENTS_WEBHOOK,
     PATH_EVENTS_STATIC_TYPES,
+    PATH_GLOBAL_DOOR_CONTROL,
+    PATH_THREAT_LEVEL,
+    PATH_IO_USERDEFINED,
     map_doors_status_response,
     map_intrusion_status_response,
     map_access_groups_response,
@@ -454,4 +457,38 @@ class LanApiClient(BaseApiClient):
     async def delete_events_webhook(self) -> Any:
         """Remove webhook configuration (DELETE /events/webhook)."""
         return await self._request("DELETE", PATH_EVENTS_WEBHOOK)
+
+    # ---------- Global door control (v1.13.0) ----------
+    async def get_global_door_control(self) -> Any:
+        """Fetch current global door control state (GET /access/globalDoorControl)."""
+        return await self._request("GET", PATH_GLOBAL_DOOR_CONTROL)
+
+    async def set_global_door_control(self, active: bool) -> Any:
+        """Open or close all globally-controlled doors (POST /access/globalDoorControl)."""
+        return await self._request("POST", PATH_GLOBAL_DOOR_CONTROL, body={"status": {"active": bool(active)}})
+
+    # ---------- Threat level (v1.13.0) ----------
+    async def get_threat_level(self) -> Any:
+        """Fetch current threat level (GET /management/threatLevel)."""
+        return await self._request("GET", PATH_THREAT_LEVEL)
+
+    async def set_threat_level(self, level: int) -> Any:
+        """Set threat level 0–4 (POST /management/threatLevel).
+
+        0=off, 1=normal, 2=level 1, 3=level 2, 4=level 3
+        """
+        return await self._request("POST", PATH_THREAT_LEVEL, body={"threatLevel": {"newThreatlevel": int(level)}})
+
+    # ---------- User-defined I/O (v1.13.0) ----------
+    async def get_io_userdefined(self, io_type: int) -> List[Dict[str, Any]]:
+        """Fetch user-defined inputs (28) or outputs (29) with their current state."""
+        js = await self._request("GET", PATH_IO_USERDEFINED, params={"ioType": io_type})
+        return _records(js)
+
+    async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
+        """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
+
+        Body: {"ids": [{"id": "0", "status": 2}]}  – status 0=passive, 2=active
+        """
+        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 

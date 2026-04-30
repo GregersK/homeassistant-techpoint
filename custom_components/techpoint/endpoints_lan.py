@@ -85,6 +85,15 @@ PATH_CARDS_FILTER    = "/access/cards/filter"
 PATH_EVENTS_WEBHOOK = "/events/webhook"               # POST/DELETE
 PATH_EVENTS_STATIC_TYPES = "/events/static/types"     # GET
 
+# Global door control (v1.13.0)
+PATH_GLOBAL_DOOR_CONTROL = "/access/globalDoorControl"   # GET/POST
+
+# Threat level (v1.13.0)
+PATH_THREAT_LEVEL = "/management/threatLevel"             # GET/POST
+
+# User-defined I/O (v1.13.0) – ioType 28=inputs, 29=outputs
+PATH_IO_USERDEFINED = "/config/io/userdefined"            # GET/POST
+
 # ------- Builders -------
 def build_doors_status_body(include_access_rights: bool = False) -> Dict[str, Any]:
     return {"doorFilter": {"includeAccessRights": bool(include_access_rights)}}
