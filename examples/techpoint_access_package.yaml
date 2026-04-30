@@ -15,14 +15,6 @@ input_text:
     name: "Last name"
     icon: mdi:account
     initial: ""
-  techpoint_ch_email:
-    name: "Email"
-    icon: mdi:email
-    initial: ""
-  techpoint_ch_phone:
-    name: "Phone"
-    icon: mdi:phone
-    initial: ""
   techpoint_ch_ext_id:
     name: "External ID (optional)"
     icon: mdi:identifier
@@ -58,6 +50,17 @@ input_select:
     options:
       - "(none)"
     icon: mdi:account-circle
+
+  # --- Threat level ---
+  techpoint_threat_level:
+    name: "Threat level"
+    options:
+      - "0:Off"
+      - "1:Normal"
+      - "2:Level 1"
+      - "3:Level 2"
+      - "4:Level 3"
+    icon: mdi:alert
 
 input_datetime:
   techpoint_card_valid_from:
@@ -160,8 +163,6 @@ script:
           body:
             firstName: "{{ states('input_text.techpoint_ch_firstname') }}"
             lastName: "{{ states('input_text.techpoint_ch_lastname') }}"
-            email: "{{ states('input_text.techpoint_ch_email') or none }}"
-            phone: "{{ states('input_text.techpoint_ch_phone') or none }}"
             id:
               extId: "{{ states('input_text.techpoint_ch_ext_id') or none }}"
 
@@ -310,3 +311,42 @@ script:
         data:
           title: "TechPoint: Deleted"
           message: "Cardholder {{ sel.split(':')[2] | default('') }} has been deleted."
+
+  # ── Set threat level from dropdown ─────────────────────────────────
+  techpoint_apply_threat_level:
+    alias: "TechPoint: Apply threat level"
+    icon: mdi:alert
+    sequence:
+      - service: techpoint.management_set_threat_level
+        data:
+          level: "{{ states('input_select.techpoint_threat_level').split(':') | first | int(0) }}"
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Threat level"
+          message: "Threat level set to: {{ states('input_select.techpoint_threat_level') }}"
+
+  # ── Open all globally-controlled doors ─────────────────────────────
+  techpoint_global_door_open:
+    alias: "TechPoint: Open all doors (global)"
+    icon: mdi:door-open
+    sequence:
+      - service: techpoint.management_set_global_door_control
+        data:
+          active: true
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Global door control"
+          message: "All globally-controlled doors have been opened."
+
+  # ── Release (close) all globally-controlled doors ──────────────────
+  techpoint_global_door_release:
+    alias: "TechPoint: Release global door control"
+    icon: mdi:door-closed
+    sequence:
+      - service: techpoint.management_set_global_door_control
+        data:
+          active: false
+      - service: persistent_notification.create
+        data:
+          title: "TechPoint: Global door control"
+          message: "Global door control released — doors returned to normal."
