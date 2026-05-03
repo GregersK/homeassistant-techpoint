@@ -1,126 +1,273 @@
 # TechPoint Access Management – Lovelace Dashboard
 #
-# Add via HA UI:
-#   Settings → Dashboards → Add Dashboard → (raw config editor)
-# Or paste into an existing view's raw YAML.
+# Multi-view dashboard med 4 sektioner:
+#   1. Opret adgang  – ny kortindehaver, kort og adgangsgrupper
+#   2. Administrér   – redigér eller slet eksisterende kortindehavere
+#   3. I/O           – bruger-definerede inputs og outputs
+#   4. System        – trusselniveau og global dørcontrol
 #
-# Requires: examples/techpoint_access_package.yaml loaded as a package.
+# Kræver: examples/techpoint_access_package.yaml indlæst som package.
+#
+# Tilføj via HA UI:
+#   Indstillinger → Dashboards → Tilføj dashboard → (rå konfigurationseditor)
+# Eller indsæt i en eksisterende views YAML.
 
-title: Access Management
-icon: mdi:shield-key
-cards:
+title: TechPoint
+views:
 
-  # ── Cardholder ───────────────────────────────────────────────────
-  - type: entities
-    title: Cardholder
-    icon: mdi:account
-    entities:
-      - entity: input_text.techpoint_ch_firstname
-        name: First name
-      - entity: input_text.techpoint_ch_lastname
-        name: Last name
-      - entity: input_text.techpoint_ch_ext_id
-        name: External ID (optional)
-
-  # ── Card ─────────────────────────────────────────────────────────
-  - type: entities
-    title: Card
-    icon: mdi:card-account-details
-    entities:
-      - entity: input_text.techpoint_card_number
-        name: Card number
-      - entity: input_datetime.techpoint_card_valid_from
-        name: Valid from
-      - entity: input_datetime.techpoint_card_valid_to
-        name: Valid to
-
-  # ── Access groups ────────────────────────────────────────────────
-  - type: entities
-    title: Access groups
-    icon: mdi:door-open
-    entities:
-      - entity: input_select.techpoint_access_group_1
-        name: Access group 1
-      - entity: input_select.techpoint_access_group_2
-        name: Access group 2
-      - entity: input_select.techpoint_access_group_3
-        name: Access group 3
-    footer:
-      type: buttons
-      entities:
-        - entity: script.techpoint_load_access_groups
-          name: Load access groups
-          icon: mdi:refresh
-
-  # ── Create ───────────────────────────────────────────────────────
-  - type: button
-    name: Create cardholder, card & assign access
+  # ═══════════════════════════════════════════════════════════════════
+  # VIEW 1 – OPRET ADGANG
+  # Opretter kortindehaver, kort og tildeler adgangsgrupper i ét flow.
+  # ═══════════════════════════════════════════════════════════════════
+  - title: Opret adgang
+    path: create
     icon: mdi:shield-plus
-    tap_action:
-      action: perform-action
-      perform_action: script.turn_on
-      target:
-        entity_id: script.techpoint_full_flow
-
-  # ── Manage existing cardholders ──────────────────────────────────
-  - type: entities
-    title: Manage cardholder
-    icon: mdi:account-edit
-    entities:
-      - entity: input_select.techpoint_cardholder_list
-        name: Cardholder
-      - entity: input_datetime.techpoint_manage_valid_to
-        name: New valid to
-      - entity: input_select.techpoint_access_group_1
-        name: Access group 1
-      - entity: input_select.techpoint_access_group_2
-        name: Access group 2
-      - entity: input_select.techpoint_access_group_3
-        name: Access group 3
-    footer:
-      type: buttons
-      entities:
-        - entity: script.techpoint_load_cardholders
-          name: Load cardholders
-          icon: mdi:account-multiple
-        - entity: script.techpoint_update_selected
-          name: Update
-          icon: mdi:content-save
-        - entity: script.techpoint_delete_selected
-          name: Delete
-          icon: mdi:account-remove
-
-  # ── System control ───────────────────────────────────────────────
-  - type: entities
-    title: System control
-    icon: mdi:security
-    entities:
-      - entity: input_select.techpoint_threat_level
-        name: Threat level
-    footer:
-      type: buttons
-      entities:
-        - entity: script.techpoint_apply_threat_level
-          name: Apply threat level
-          icon: mdi:alert-circle
-
-  - type: horizontal-stack
     cards:
-      - type: button
-        name: Open all doors
+
+      # ── Trin 1: Kortindehaver ───────────────────────────────────────
+      - type: entities
+        title: "Trin 1 – Kortindehaver"
+        icon: mdi:account
+        entities:
+          - entity: input_text.techpoint_ch_firstname
+            name: Fornavn
+          - entity: input_text.techpoint_ch_lastname
+            name: Efternavn
+          - entity: input_text.techpoint_ch_ext_id
+            name: Eksternt ID (valgfrit)
+
+      # ── Trin 2: Kort ────────────────────────────────────────────────
+      - type: entities
+        title: "Trin 2 – Kort"
+        icon: mdi:card-account-details
+        entities:
+          - entity: input_text.techpoint_card_number
+            name: Kortnummer
+          - entity: input_datetime.techpoint_card_valid_from
+            name: Gyldig fra
+          - entity: input_datetime.techpoint_card_valid_to
+            name: Gyldig til
+
+      # ── Trin 3: Adgangsgrupper ──────────────────────────────────────
+      # Tryk "Hent adgangsgrupper" første gang for at udfylde listerne.
+      - type: entities
+        title: "Trin 3 – Adgangsgrupper"
         icon: mdi:door-open
-        icon_height: 40px
-        tap_action:
-          action: perform-action
-          perform_action: script.turn_on
-          target:
-            entity_id: script.techpoint_global_door_open
+        entities:
+          - entity: input_select.techpoint_access_group_1
+            name: Adgangsgruppe 1
+          - entity: input_select.techpoint_access_group_2
+            name: Adgangsgruppe 2
+          - entity: input_select.techpoint_access_group_3
+            name: Adgangsgruppe 3
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_access_groups
+              name: Hent adgangsgrupper
+              icon: mdi:refresh
+
+      # ── Trin 4: Opret ───────────────────────────────────────────────
+      # Kører det fulde flow: opret kortindehaver → opret kort → tildel adgang.
+      # Resultat vises som persistent notification i HA.
       - type: button
-        name: Release door control
-        icon: mdi:door-closed
-        icon_height: 40px
+        name: "Opret kortindehaver, kort & adgang"
+        icon: mdi:shield-plus
+        icon_height: 48px
         tap_action:
           action: perform-action
           perform_action: script.turn_on
           target:
-            entity_id: script.techpoint_global_door_release
+            entity_id: script.techpoint_full_flow
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VIEW 2 – ADMINISTRÉR KORTINDEHAVERE
+  # Opdatér gyldighedsdato og adgangsgrupper, eller slet kortindehaver.
+  # ═══════════════════════════════════════════════════════════════════
+  - title: Administrér
+    path: manage
+    icon: mdi:account-edit
+    cards:
+
+      # ── Vælg kortindehaver ──────────────────────────────────────────
+      # Tryk "Hent kortindehavere" for at opdatere listen.
+      # Formatet er: "ID:KortID:Navn (kortnumre)"
+      - type: entities
+        title: Vælg kortindehaver
+        icon: mdi:account-search
+        entities:
+          - entity: input_select.techpoint_cardholder_list
+            name: Kortindehaver
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_cardholders
+              name: Hent kortindehavere
+              icon: mdi:account-multiple
+
+      # ── Opdatér gyldighedsdato ──────────────────────────────────────
+      - type: entities
+        title: Ny gyldighedsdato
+        icon: mdi:calendar-clock
+        entities:
+          - entity: input_datetime.techpoint_manage_valid_to
+            name: Gyldig til
+
+      # ── Opdatér adgangsgrupper ──────────────────────────────────────
+      # Lader tomt (ingen) = fjerner adgangsgruppen fra kortet.
+      - type: entities
+        title: Adgangsgrupper
+        icon: mdi:door-open
+        entities:
+          - entity: input_select.techpoint_access_group_1
+            name: Adgangsgruppe 1
+          - entity: input_select.techpoint_access_group_2
+            name: Adgangsgruppe 2
+          - entity: input_select.techpoint_access_group_3
+            name: Adgangsgruppe 3
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_load_access_groups
+              name: Hent adgangsgrupper
+              icon: mdi:refresh
+
+      # ── Handlinger ──────────────────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Gem ændringer
+            icon: mdi:content-save
+            icon_height: 40px
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.techpoint_update_selected
+          - type: button
+            name: Slet kortindehaver
+            icon: mdi:account-remove
+            icon_height: 40px
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.techpoint_delete_selected
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VIEW 3 – BRUGER-DEFINEREDE INPUTS & OUTPUTS
+  #
+  # Find dine entity-IDs under:
+  #   Indstillinger → Enheder & Tjenester → TechPoint → Enheder
+  #
+  # Inputs  → binary_sensor.techpoint_io_input_<ID>   (ioType=28)
+  # Outputs → switch.techpoint_io_output_<ID>          (ioType=29)
+  #
+  # Erstat eksempel-IDs nedenfor med dine faktiske entity-IDs.
+  # Tilføj/fjern linjer efter behov.
+  # ═══════════════════════════════════════════════════════════════════
+  - title: I/O
+    path: io
+    icon: mdi:electric-switch
+    cards:
+
+      # ── Inputs (skrivebeskyttede) ───────────────────────────────────
+      - type: entities
+        title: Inputs
+        icon: mdi:import
+        entities:
+          - entity: binary_sensor.techpoint_io_input_1
+            name: Input 1
+            icon: mdi:electric-switch-closed
+          # - entity: binary_sensor.techpoint_io_input_2
+          #   name: Input 2
+          # - entity: binary_sensor.techpoint_io_input_3
+          #   name: Input 3
+
+      # ── Outputs (kan toggles) ───────────────────────────────────────
+      - type: entities
+        title: Outputs
+        icon: mdi:export
+        entities:
+          - entity: switch.techpoint_io_output_1
+            name: Output 1
+            icon: mdi:electric-switch
+          # - entity: switch.techpoint_io_output_2
+          #   name: Output 2
+          # - entity: switch.techpoint_io_output_3
+          #   name: Output 3
+
+      # ── Output-knapper (hurtig-toggle) ──────────────────────────────
+      # Praktisk til dashboards der skal bruges som kontrollpanel.
+      # Dupliker blokken for hvert output du har.
+      - type: horizontal-stack
+        cards:
+          - type: button
+            entity: switch.techpoint_io_output_1
+            name: Output 1
+            icon: mdi:toggle-switch
+            icon_height: 40px
+            tap_action:
+              action: toggle
+          # - type: button
+          #   entity: switch.techpoint_io_output_2
+          #   name: Output 2
+          #   icon: mdi:toggle-switch
+          #   icon_height: 40px
+          #   tap_action:
+          #     action: toggle
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VIEW 4 – SYSTEMKONTROL
+  # Trusselniveau, global dørcontrol og overblik over kortindehavere.
+  # ═══════════════════════════════════════════════════════════════════
+  - title: System
+    path: system
+    icon: mdi:security
+    cards:
+
+      # ── Antal kortindehavere ────────────────────────────────────────
+      # Entity-ID afhænger af controller-navn, fx:
+      #   sensor.techpoint_lan_cardholder_count
+      # Find det under Indstillinger → Enheder & Tjenester → TechPoint.
+      - type: entity
+        entity: sensor.techpoint_cardholder_count
+        name: Kortindehavere registreret
+        icon: mdi:account-group
+
+      # ── Trusselniveau ────────────────────────────────────────────────
+      - type: entities
+        title: Trusselniveau
+        icon: mdi:alert-circle
+        entities:
+          - entity: input_select.techpoint_threat_level
+            name: Trusselniveau
+        footer:
+          type: buttons
+          entities:
+            - entity: script.techpoint_apply_threat_level
+              name: Anvend
+              icon: mdi:check
+
+      # ── Global dørcontrol ────────────────────────────────────────────
+      # ADVARSEL: Åbner ALLE globalt-styrede døre på én gang.
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Åbn alle døre
+            icon: mdi:door-open
+            icon_height: 40px
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.techpoint_global_door_open
+          - type: button
+            name: Frigiv dørcontrol
+            icon: mdi:door-closed
+            icon_height: 40px
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.techpoint_global_door_release
