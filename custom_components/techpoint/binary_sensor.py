@@ -29,6 +29,9 @@ async def async_setup_entry(
     for zone in [x for x in snapshot.get("zones", []) if x.get("io_type") == 16]:
         entities.append(TechPointZoneSensor(coord, entry.entry_id, zone))
 
+    for inp in snapshot.get("io_inputs", []):
+        entities.append(TechPointInputSensor(coord, entry.entry_id, inp))
+
     if entities:
         async_add_entities(entities)
 
@@ -84,4 +87,52 @@ class TechPointZoneSensor(CoordinatorEntity, BinarySensorEntity):
             "zone_id": self._zone_id,
             "io_id": self._io_id,
             "raw": z,
+        }
+
+
+class TechPointInputSensor(CoordinatorEntity, BinarySensorEntity):
+    """User-defined input (ioType=28). State 2=active, 0=passive."""
+
+    _attr_has_entity_name = True
+    _attr_device_class = BinarySensorDeviceClass.POWER
+
+    def __init__(self, coordinator: TechPointCoordinator, entry_id: str, inp: dict[str, Any]) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._input_id = str(inp.get("id", ""))
+        self._attr_unique_id = f"{entry_id}_io_input_{self._input_id}"
+
+    def _current(self) -> dict[str, Any] | None:
+        for inp in (self.coordinator.data or {}).get("io_inputs", []):
+            if str(inp.get("id", "")) == self._input_id:
+                return inp
+        return None
+
+    @property
+    def name(self) -> str:
+        inp = self._current() or {}
+        return inp.get("name") or f"Input {self._input_id}"
+
+    @property
+    def is_on(self) -> bool | None:
+        inp = self._current()
+        if inp is None:
+            return None
+        return int(inp.get("state", 0) or 0) == 2
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
+        inp = self._current() or {}
+        return build_device_info(ctx, grouping, "input", item_id=self._input_id, item_name=inp.get("name"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        inp = self._current() or {}
+        return {
+            "input_id": self._input_id,
+            "techpoint_id": inp.get("techpoint"),
+            "state_raw": inp.get("state"),
+            "last_changed": inp.get("time"),
         }

@@ -72,6 +72,18 @@ def build_device_info(
         model_group = f"{ctx.model_controller} Areas"
         group_name = f"{ctx.controller_name} - Områder"
         item_prefix = "Area"
+    elif kind_low in ("input", "inputs"):
+        singular, plural = "input", "inputs"
+        model_item = f"{ctx.model_controller} Input"
+        model_group = f"{ctx.model_controller} Inputs"
+        group_name = f"{ctx.controller_name} - Inputs"
+        item_prefix = "Input"
+    elif kind_low in ("output", "outputs"):
+        singular, plural = "output", "outputs"
+        model_item = f"{ctx.model_controller} Output"
+        model_group = f"{ctx.model_controller} Outputs"
+        group_name = f"{ctx.controller_name} - Outputs"
+        item_prefix = "Output"
     else:
         # Fallback: treat as grouped type
         singular, plural = kind_low, f"{kind_low}s"

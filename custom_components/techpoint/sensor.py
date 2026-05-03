@@ -43,6 +43,10 @@ async def async_setup_entry(
         )
 
 
+    # Cardholder count (if API supports it)
+    if snapshot.get("cardholder_count") is not None or hasattr(coordinator.client, "list_card_holders_filter"):
+        entities.append(TechPointCardholderCountSensor(coordinator, entry.entry_id, coordinator.name))
+
     # Realtime helpers
     # 1) Human readable, single-line "latest event" (best for dashboards)
     entities.append(TechPointEventLogLineSensor(hass, entry.entry_id, coordinator.name))
@@ -144,6 +148,35 @@ class TechPointDoorStatusSensor(CoordinatorEntity, SensorEntity):
             "intrusion_state_text": d.get("intrusion_state_text"),
         }
 
+
+
+class TechPointCardholderCountSensor(CoordinatorEntity, SensorEntity):
+    """Total number of cardholders registered in TechPoint."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:account-group"
+    _attr_native_unit_of_measurement = "cardholders"
+
+    def __init__(self, coordinator: TechPointCoordinator, entry_id: str, controller_name: str) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._controller_name = controller_name
+        self._attr_unique_id = f"{entry_id}_cardholder_count"
+
+    @property
+    def name(self) -> str:
+        return "Cardholder count"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._controller_name,
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        return (self.coordinator.data or {}).get("cardholder_count")
 
 
 class TechPointEventLogLineSensor(SensorEntity):
