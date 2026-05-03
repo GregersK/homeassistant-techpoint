@@ -27,57 +27,51 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self.client = client
 
     async def _async_update_data(self) -> Dict[str, Any]:
-        """Fetch doors plus AIA area/zone status from the TechPoint client.
-
-        Supports both LAN and cloud clients by falling back to list_areas/list_zones
-        if list_areas_status/list_zones_status are not implemented.
-        """
+        """Fetch doors, AIA area/zone status, user-defined I/O and cardholder count."""
         try:
-            # Foretræk eksplicitte *status*-metoder (LAN), men fald tilbage til plain list (Cloud)
-            list_areas = getattr(self.client, "list_areas_status", None) or getattr(
-                self.client,
-                "list_areas",
-                None,
-            )
-            list_zones = getattr(self.client, "list_zones_status", None) or getattr(
-                self.client,
-                "list_zones",
-                None,
-            )
-
+            list_areas = getattr(self.client, "list_areas_status", None) or getattr(self.client, "list_areas", None)
+            list_zones = getattr(self.client, "list_zones_status", None) or getattr(self.client, "list_zones", None)
             get_api_info = getattr(self.client, "get_api_info", None)
+            get_io = getattr(self.client, "get_io_userdefined", None)
+            list_cardholders_filter = getattr(self.client, "list_card_holders_filter", None)
 
-            if list_areas is None or list_zones is None:
-                _LOGGER.debug(
-                    "TechPoint client %s has no area/zone methods; returning doors only",
-                    type(self.client).__name__,
-                )
-                doors = await self.client.list_doors()
-                api_info = {}
-                if get_api_info:
-                    try:
-                        api_info = await get_api_info()
-                    except Exception:
-                        _LOGGER.debug("TechPoint: get_api_info failed", exc_info=True)
-                return {"doors": doors or [], "areas": [], "zones": [], "api_info": api_info or {}}
+            tasks: list = [self.client.list_doors()]
+            task_keys = ["doors"]
 
-            tasks = [
-                self.client.list_doors(),
-                list_areas(),
-                list_zones(),
-            ]
+            if list_areas:
+                tasks.append(list_areas())
+                task_keys.append("areas")
+            if list_zones:
+                tasks.append(list_zones())
+                task_keys.append("zones")
             if get_api_info:
                 tasks.append(get_api_info())
+                task_keys.append("api_info")
+            if get_io:
+                tasks.append(get_io(28))
+                task_keys.append("io_inputs")
+                tasks.append(get_io(29))
+                task_keys.append("io_outputs")
+            if list_cardholders_filter:
+                tasks.append(list_cardholders_filter({"cardHolderFilter": {"doNotFetchData": True}}))
+                task_keys.append("cardholders_meta")
 
-            res = await asyncio.gather(*tasks)
-            doors, areas, zones = res[0], res[1], res[2]
-            api_info = res[3] if get_api_info and len(res) > 3 else {}
-            return {
-                "doors": doors or [],
-                "areas": areas or [],
-                "zones": zones or [],
-                "api_info": api_info or {},
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            data: Dict[str, Any] = {
+                "doors": [], "areas": [], "zones": [], "api_info": {},
+                "io_inputs": [], "io_outputs": [], "cardholder_count": None,
             }
+            for key, val in zip(task_keys, results):
+                if isinstance(val, Exception):
+                    _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
+                    continue
+                if key == "cardholders_meta":
+                    data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None
+                else:
+                    data[key] = val or data.get(key, [])
+
+            return data
         except Exception as e:
             _LOGGER.warning("TechPoint update failed: %s", e)
             raise
