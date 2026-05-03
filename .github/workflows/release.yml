@@ -57,7 +57,8 @@ jobs:
 
       - name: Build release zip
         run: |
-          zip -r techpoint.zip custom_components/techpoint/
+          cd custom_components/techpoint
+          zip -r ../../techpoint.zip .
 
       - name: Extract changelog for this version
         id: changelog
