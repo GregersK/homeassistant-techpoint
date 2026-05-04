@@ -86,6 +86,20 @@ def _records(js: Any) -> list[dict[str, Any]]:
         return []
     return []
 
+def _io_records(js: Any) -> list[dict[str, Any]]:
+    """Return records list from IO userdefined response (handles extra field name variants)."""
+    if js is None:
+        return []
+    if isinstance(js, list):
+        return [x for x in js if isinstance(x, dict)]
+    if isinstance(js, dict):
+        for key in ("records", "items", "ios", "ioRecords", "ioList", "userDefinedIOs"):
+            recs = js.get(key)
+            if isinstance(recs, list):
+                return [x for x in recs if isinstance(x, dict)]
+        return []
+    return []
+
 class LanApiClient(BaseApiClient):
     """LAN klient med Basic eller Bearer alt efter din konfiguration."""
 
@@ -380,10 +394,12 @@ class LanApiClient(BaseApiClient):
         js = await self._request("GET", PATH_CARD_HOLDERS)
         return _records(js)
 
-    async def list_card_holders_filter(self, filter_body: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Filter cardholders (POST /access/cardHolders/filter)."""
-        js = await self._request("POST", PATH_CARD_HOLDERS_FILTER, body=filter_body)
-        return _records(js)
+    async def list_card_holders_filter(self, filter_body: Dict[str, Any]) -> Any:
+        """Filter cardholders (POST /access/cardHolders/filter).
+
+        Returns the raw response dict so callers can read both 'records' and 'count'.
+        """
+        return await self._request("POST", PATH_CARD_HOLDERS_FILTER, body=filter_body)
 
     async def update_card_holder(self, body: Dict[str, Any]) -> Any:
         """Update cardholder (PUT /access/cardHolders). Body must include id."""
@@ -483,16 +499,31 @@ class LanApiClient(BaseApiClient):
     async def get_io_userdefined(self, io_type: int) -> List[Dict[str, Any]]:
         """Fetch user-defined inputs (28) or outputs (29) with their current state.
 
-        TechPoint expects POST with body containing a filter — the /filter
-        suffix variant returns 404, and GET with query params returns 400
-        "Could not parse input".
+        GET without query params returns all IO; filter client-side by ioType.
+        GET with ?ioType=N → 400 "Could not parse input".
+        POST with filter body → 400 "Expected ids member" (POST is setter-only).
         """
-        js = await self._request(
-            "POST",
-            PATH_IO_USERDEFINED,
-            body={"ioFilter": {"ioType": int(io_type)}},
-        )
-        return _records(js)
+        js = await self._request("GET", PATH_IO_USERDEFINED)
+        all_records = _io_records(js)
+        out: List[Dict[str, Any]] = []
+        for raw in all_records:
+            r_type = raw.get("ioType") or raw.get("io_type")
+            try:
+                r_type = int(r_type) if r_type is not None else -1
+            except Exception:
+                r_type = -1
+            if r_type != int(io_type):
+                continue
+            r = dict(raw)
+            # Normalize: ensure "id" is always populated (TechPoint may use ioId)
+            if not r.get("id"):
+                raw_id = r.get("ioId") or r.get("ioID") or r.get("io_id")
+                r["id"] = _int_id(raw_id)
+            # Normalize: ensure "name" is always populated
+            if not r.get("name"):
+                r["name"] = r.get("ioName") or r.get("displayName") or r.get("text")
+            out.append(r)
+        return out
 
     async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
