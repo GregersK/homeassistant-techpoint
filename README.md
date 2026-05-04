@@ -2,7 +2,7 @@
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-0.7.2-blue.svg)
+![Version](https://img.shields.io/badge/version-0.7.3-blue.svg)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2024.1-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
