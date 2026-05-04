@@ -600,11 +600,28 @@ async def async_setup_realtime_events(hass: HomeAssistant, entry, client, cfg: D
 
 
 async def async_unload_realtime_events(hass: HomeAssistant, entry, client) -> None:
-    """Best-effort cleanup of TP webhook + HA webhook."""
+    """Unregister HA webhook handler on unload.
+
+    We intentionally do NOT send DELETE to TechPoint here — the webhook URL
+    is stable (based on entry_id) and the next async_setup_entry will POST
+    an updated registration. Sending DELETE during every reload/update would
+    leave TechPoint with no webhook until the new setup completes (or fails).
+    """
+    try:
+        async_unregister(hass, _webhook_id(entry.entry_id))
+    except Exception:  # noqa: BLE001
+        pass
+
+
+async def async_remove_realtime_events(hass: HomeAssistant, entry, client) -> None:
+    """Full cleanup — send DELETE to TechPoint and unregister HA handler.
+
+    Call this only on true removal/uninstall of the integration, not on reload.
+    """
     try:
         if hasattr(client, "delete_events_webhook"):
             await client.delete_events_webhook()
-            _LOGGER.info("TechPoint: webhook DELETE sent to /events/webhook (integration unloaded)")
+            _LOGGER.info("TechPoint: webhook DELETE sent to /events/webhook (integration removed)")
     except Exception:  # noqa: BLE001
         pass
 
