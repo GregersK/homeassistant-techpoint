@@ -2,7 +2,7 @@
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-0.7.3-blue.svg)
+![Version](https://img.shields.io/badge/version-0.7.4-blue.svg)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2024.1-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
@@ -11,11 +11,12 @@ Custom Home Assistant integration for **TechPoint Access Control Systems** (both
 
 - **Cloud & LAN Support**: Connects to TechPoint via cloud API or direct LAN controller
 - **Real-time Events**: WebHook-based real-time event notifications for instant state updates (LAN only)
-- **Device Types**: Supports doors, zones, areas, and events
+- **Device Types**: Supports doors, zones, areas, user-defined I/O, and events
 - **Smart Device Grouping**: Group devices by type or per-item for flexible organization
 - **Multi-language**: Danish (da), English (en), and 10+ other languages
-- **Custom Services**: Door control, access management, and more
-- **Sensors & State**: Monitor battery, signal strength, last activity, and system status
+- **Custom Services**: Door control, access management, threat level, global door control, and more
+- **Sensors & State**: Monitor battery, signal strength, last activity, cardholder count, and system status
+- **Access Management**: Full cardholder and card management with example dashboard
 
 ## Installation
 
@@ -78,8 +79,9 @@ Restart Home Assistant.
 | **Select** | Door mode selection (Normal, Release, PermanentRelease, Secure, Block) |
 | **Button** | Momentary pulse actions |
 | **Alarm Control Panel** | Area intrusion arm/disarm |
-| **Binary Sensor** | Zone intrusion detection |
-| **Sensor** | Battery level, signal strength, last activity, event log |
+| **Binary Sensor** | Zone intrusion detection + user-defined inputs (ioType 28) |
+| **Switch** | User-defined outputs (ioType 29) — toggle active/passive |
+| **Sensor** | Door status, cardholder count, event log, webhook URL |
 
 ## Device Grouping
 
@@ -141,8 +143,8 @@ The `examples/` directory contains a ready-to-use HA package for full cardholder
 
 ### Creating a cardholder with access
 
-1. Fill in the **Cardholder** fields (first name, last name, email, phone)
-2. Enter a **Card number** (decimal or hex, e.g. `1234ABCD`)
+1. Fill in the **Cardholder** fields (first name, last name, optional external ID)
+2. Enter a **Card number**
 3. Set **Valid from** and **Valid to** dates
 4. Click **Load access groups** to populate the dropdowns
 5. Select up to 3 **Access groups**
@@ -162,22 +164,25 @@ A persistent notification confirms success.
 | Script | Description |
 |---|---|
 | `script.techpoint_load_access_groups` | Fetch access groups from TechPoint and populate the three dropdowns |
-| `script.techpoint_load_cardholders` | Fetch all cardholders and populate the management dropdown |
+| `script.techpoint_load_cardholders` | Fetch all cardholders (with card numbers) and populate the management dropdown |
 | `script.techpoint_full_flow` | Create cardholder + card and assign access groups in one step |
 | `script.techpoint_update_selected` | Update expiry date and access groups for the selected cardholder |
 | `script.techpoint_delete_selected` | Delete the selected cardholder and their linked card |
+| `script.techpoint_apply_threat_level` | Apply the selected threat level to TechPoint |
+| `script.techpoint_global_door_open` | Open all globally-controlled doors |
+| `script.techpoint_global_door_release` | Release global door control (return to normal) |
 
 ## Real-time Events (LAN Only)
 
-When using LAN mode, the integration configures a WebHook on the TechPoint controller for instant event notifications. Doors, alarms, and other events are reflected in Home Assistant within seconds.
+When using LAN mode, the integration automatically registers a WebHook on the TechPoint controller for instant event notifications. Doors, alarms, and other events are reflected in Home Assistant within seconds.
 
-Configure which event categories to receive under **Options**:
+Configure which event categories to receive under **Options** (all enabled by default for LAN):
 - Door/access events
 - Alarm/intrusion events
-- Tamper events
+- Tamper/sabotage events
 - Error/fault events
 
-The webhook URL is shown in the **Options** page for reference. The webhook is automatically cleaned up when the integration is removed.
+The webhook URL is shown in the **Options** page for easy reference. On integration reload or update, the webhook registration is preserved — no manual reconfiguration in TechPoint is needed. The webhook is only removed when the integration is fully uninstalled.
 
 > **Note:** Real-time events are not supported in Cloud mode.
 
