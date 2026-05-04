@@ -421,5 +421,7 @@ class TechPointWebhookUrlSensor(SensorEntity):
             "auth_type": "None",
             "techpoint_endpoint": "/events/webhook",
             "webhook_id": data.get("webhook_id"),
+            "event_filter": data.get("webhook_filter"),
+            "registered_at": data.get("webhook_registered_at"),
         }
 

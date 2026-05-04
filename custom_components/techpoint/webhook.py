@@ -68,6 +68,10 @@ def _enabled_categories(cfg: Dict[str, Any]) -> Tuple[bool, bool, bool, bool]:
     )
 
 
+def _any_enabled(enabled: Tuple[bool, bool, bool, bool]) -> bool:
+    return any(enabled)
+
+
 def _iter_events(payload: Any) -> Iterable[Dict[str, Any]]:
     """Normalize TechPoint webhook payload to iterable of event dicts."""
     if payload is None:
@@ -363,6 +367,10 @@ def _classify_event(type_name: Optional[str], details_values: List[str]) -> str:
     if any(k in hay for k in ("tamper", "sabotage", "sab", "cover")):
         return "tamper"
 
+    # User-defined I/O state changes
+    if any(k in hay for k in ("i/o", "io state", "output", "input", "userdefined", "relay", "digital")):
+        return "io"
+
     # Error
     if any(k in hay for k in ("error", "fault", "fejl", "offline", "power", "battery", "communication")):
         return "error"
@@ -380,6 +388,9 @@ def _is_enabled(category: str, enabled: Tuple[bool, bool, bool, bool]) -> bool:
         return tamper_on
     if category == "error":
         return error_on
+    # I/O events follow door toggle (they are action/control events).
+    if category == "io":
+        return door_on
     # If unknown, only forward when at least one category is enabled.
     return any(enabled)
 
@@ -471,6 +482,8 @@ def _build_event_filter(
         n = (name or "").lower()
         if door_on and any(k in n for k in ("access", "door", "reader", "card", "credential")):
             return "door"
+        if door_on and any(k in n for k in ("i/o", "io state", "output", "input", "userdefined", "relay", "digital")):
+            return "io"
         if alarm_on and any(k in n for k in ("intrusion", "alarm", "arm", "disarm", "set", "unset")):
             return "alarm"
         if tamper_on and any(k in n for k in ("tamper", "sabotage", "sab")):
@@ -573,7 +586,15 @@ async def async_setup_realtime_events(hass: HomeAssistant, entry, client, cfg: D
     try:
         if hasattr(client, "set_events_webhook"):
             await client.set_events_webhook(url=webhook_url, event_filter=event_filter, auth_type="None")
-            _LOGGER.info("TechPoint: realtime events enabled (webhook configured)")
+            registered_at = dt_util.now().isoformat()
+            _LOGGER.info(
+                "TechPoint: webhook POST sent to /events/webhook at %s | url=%s | filter=%s",
+                registered_at,
+                webhook_url,
+                event_filter,
+            )
+            if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
+                hass.data[DOMAIN][entry.entry_id]["webhook_registered_at"] = registered_at
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("TechPoint: could not configure TechPoint webhook: %s", err)
 
@@ -583,6 +604,7 @@ async def async_unload_realtime_events(hass: HomeAssistant, entry, client) -> No
     try:
         if hasattr(client, "delete_events_webhook"):
             await client.delete_events_webhook()
+            _LOGGER.info("TechPoint: webhook DELETE sent to /events/webhook (integration unloaded)")
     except Exception:  # noqa: BLE001
         pass
 
