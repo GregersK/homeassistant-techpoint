@@ -97,7 +97,8 @@ async def _fetch_max_id_via_filter(client, filter_key: str, limit: int = 1000, m
     for _ in range(max_pages):
         filter_body = {filter_key: {"limitCount": limit, "skipCount": skip}}
         if filter_key == "cardHolderFilter":
-            records = await client.list_card_holders_filter(filter_body)
+            raw = await client.list_card_holders_filter(filter_body)
+            records = raw.get("records", []) if isinstance(raw, dict) else (raw or [])
         else:
             records = await client.list_cards_filter(filter_body)
         if not records:
@@ -231,11 +232,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async def access_list_cardholders(call: ServiceCall):
         try:
             client = _get_client(hass, call.data.get("entry_id"))
-            # /access/cardHolders (GET) expects a single parameter on many TechPoint versions.
-            # Use the filter endpoint to list all cardholders.
-            res = await client.list_card_holders_filter({"cardHolderFilter": {"limitCount": 1000, "skipCount": 0}})
-            _fire(hass, f"{DOMAIN}_access_list_cardholders_result", {"result": res})
-            return {"cardholders": res}
+            raw = await client.list_card_holders_filter({"cardHolderFilter": {"limitCount": 1000, "skipCount": 0}})
+            records = raw.get("records", []) if isinstance(raw, dict) else (raw or [])
+            _fire(hass, f"{DOMAIN}_access_list_cardholders_result", {"result": records})
+            return {"cardholders": records}
         except Exception as e:
             raise HomeAssistantError(str(e))
 
@@ -245,9 +245,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
             flt = call.data["filter"]
             if isinstance(flt, dict) and "cardHolderFilter" not in flt:
                 flt = {"cardHolderFilter": flt}
-            res = await client.list_card_holders_filter(flt)
-            _fire(hass, f"{DOMAIN}_access_list_cardholders_filter_result", {"result": res})
-            return {"cardholders": res}
+            raw = await client.list_card_holders_filter(flt)
+            records = raw.get("records", []) if isinstance(raw, dict) else (raw or [])
+            _fire(hass, f"{DOMAIN}_access_list_cardholders_filter_result", {"result": records})
+            return {"cardholders": records}
         except Exception as e:
             raise HomeAssistantError(str(e))
 
