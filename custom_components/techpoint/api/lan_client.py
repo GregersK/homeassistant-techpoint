@@ -483,13 +483,13 @@ class LanApiClient(BaseApiClient):
     async def get_io_userdefined(self, io_type: int) -> List[Dict[str, Any]]:
         """Fetch user-defined inputs (28) or outputs (29) with their current state.
 
-        TechPoint expects POST with a wrapped filter body, consistent with
-        other config/management list endpoints. GET returns 400 "Could not
-        parse input".
+        TechPoint expects POST with body containing a filter — the /filter
+        suffix variant returns 404, and GET with query params returns 400
+        "Could not parse input".
         """
         js = await self._request(
             "POST",
-            PATH_IO_USERDEFINED + "/filter",
+            PATH_IO_USERDEFINED,
             body={"ioFilter": {"ioType": int(io_type)}},
         )
         return _records(js)

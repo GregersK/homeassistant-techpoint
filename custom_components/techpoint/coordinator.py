@@ -25,6 +25,9 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             update_interval=timedelta(seconds=update_interval_s),
         )
         self.client = client
+        # Keys that have failed at least once — skipped on subsequent polls
+        # to avoid spamming the controller's error log. Reset on reload.
+        self._disabled_keys: set[str] = set()
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch doors, AIA area/zone status, user-defined I/O and cardholder count."""
@@ -38,21 +41,22 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             tasks: list = [self.client.list_doors()]
             task_keys = ["doors"]
 
-            if list_areas:
+            if list_areas and "areas" not in self._disabled_keys:
                 tasks.append(list_areas())
                 task_keys.append("areas")
-            if list_zones:
+            if list_zones and "zones" not in self._disabled_keys:
                 tasks.append(list_zones())
                 task_keys.append("zones")
-            if get_api_info:
+            if get_api_info and "api_info" not in self._disabled_keys:
                 tasks.append(get_api_info())
                 task_keys.append("api_info")
-            if get_io:
+            if get_io and "io_inputs" not in self._disabled_keys:
                 tasks.append(get_io(28))
                 task_keys.append("io_inputs")
+            if get_io and "io_outputs" not in self._disabled_keys:
                 tasks.append(get_io(29))
                 task_keys.append("io_outputs")
-            if list_cardholders_filter:
+            if list_cardholders_filter and "cardholders_meta" not in self._disabled_keys:
                 tasks.append(list_cardholders_filter({"cardHolderFilter": {"doNotFetchData": True}}))
                 task_keys.append("cardholders_meta")
 
@@ -64,7 +68,17 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             }
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
-                    _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
+                    # First failure for this optional key: disable it for this session
+                    # so we don't keep spamming TechPoint with failing requests.
+                    if key != "doors":
+                        self._disabled_keys.add(key)
+                        _LOGGER.warning(
+                            "TechPoint: %s fetch failed (disabled until reload): %s",
+                            key,
+                            val,
+                        )
+                    else:
+                        _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
                     continue
                 if key == "cardholders_meta":
                     data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None
