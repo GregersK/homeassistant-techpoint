@@ -443,16 +443,16 @@ class LanApiClient(BaseApiClient):
         password: Optional[str] = None,
     ) -> Any:
         """Configure TechPoint to POST events to a webhook URL (POST /events/webhook)."""
-        body: Dict[str, Any] = {
+        inner: Dict[str, Any] = {
             "url": str(url),
             "authType": str(auth_type),
             "eventFilter": event_filter or {},
         }
         if user_name:
-            body["userName"] = str(user_name)
+            inner["userName"] = str(user_name)
         if password:
-            body["password"] = str(password)
-        return await self._request("POST", PATH_EVENTS_WEBHOOK, body=body)
+            inner["password"] = str(password)
+        return await self._request("POST", PATH_EVENTS_WEBHOOK, body={"eventWebHook": inner})
 
     async def delete_events_webhook(self) -> Any:
         """Remove webhook configuration (DELETE /events/webhook)."""
