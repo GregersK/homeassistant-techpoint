@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.6] - 2026-05-04
+
+### Fixed
+- IO userdefined read endpoint changed from `POST /config/io/userdefined` (setter-only → 400 "Expected ids member") to `GET /config/io/userdefined` without query params, with client-side filtering by `ioType`. `GET ?ioType=N` caused 400 "Could not parse input".
+- IO records normalized on read: `id` populated from `ioId`/`ioID` fallback, `name` from `ioName`/`displayName`/`text` — covers firmware field name variations.
+- Cardholder count sensor: `list_card_holders_filter` now returns raw response so coordinator can read the `count` field (previously only returned records list, losing `count`).
+
 ## [0.7.5] - 2026-05-04
 
 ### Fixed
