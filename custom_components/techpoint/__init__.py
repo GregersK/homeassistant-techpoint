@@ -23,7 +23,7 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import TechPointCoordinator
-from .webhook import async_setup_realtime_events, async_unload_realtime_events
+from .webhook import async_setup_realtime_events, async_unload_realtime_events, async_remove_realtime_events
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -172,15 +172,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Called by HA when the config entry is permanently removed (not on reload)."""
+    try:
+        data = (hass.data.get(DOMAIN) or {}).get(entry.entry_id) or {}
+        client = data.get("client")
+        if client is None:
+            from .api.factory import create_client
+            cfg = {**entry.data, **(entry.options or {})}
+            client = create_client(hass, cfg[CONF_BASE_URL], cfg)
+        await async_remove_realtime_events(hass, entry, client)
+    except Exception:  # noqa: BLE001
+        _LOGGER.debug("TechPoint: error during webhook cleanup on removal", exc_info=True)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    # Best-effort cleanup of webhook (TP + HA)
+    # Unregister HA webhook handler only — no DELETE to TechPoint on reload/update.
+    # async_remove_entry handles true removal.
     try:
         data = (hass.data.get(DOMAIN) or {}).get(entry.entry_id) or {}
         client = data.get("client")
         if client is not None:
             await async_unload_realtime_events(hass, entry, client)
     except Exception:  # noqa: BLE001
-        _LOGGER.debug("TechPoint: error during webhook cleanup on unload", exc_info=True)
+        _LOGGER.debug("TechPoint: error during webhook handler unregister on unload", exc_info=True)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
