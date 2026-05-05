@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-05-05
+
+### Fixed
+- Same fix as v0.8.2 — re-released to ensure HACS picks up the updated manifest
+  and resolves the 415 "Content type must be application/json" errors on
+  `GET /info/api`, `GET /config/io/userdefined`, etc.
+- All requests now send `Content-Type: application/json` and a valid JSON body
+  (defaulting to `{}` when no body is provided), satisfying TechPoint's
+  RapidJSON parser on every endpoint.
+
 ## [0.8.2] - 2026-05-05
 
 ### Fixed
