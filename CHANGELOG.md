@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-05-05
+
+### Fixed
+- Reverted v0.8.1 change that removed `Content-Type: application/json` from GET requests.
+  TechPoint requires `Content-Type: application/json` on **all** requests (including GET),
+  and its RapidJSON parser also requires a valid JSON body when that header is set.
+  `_request()` now always sends `Content-Type: application/json` and falls back to an
+  empty `{}` body when no explicit body is provided, satisfying both constraints.
+- This resolves 415 "Content type must be application/json" errors on `GET /info/api`,
+  `GET /config/io/userdefined`, and all other GET endpoints introduced by v0.8.1.
+
 ## [0.8.1] - 2026-05-04
 
 ### Fixed
