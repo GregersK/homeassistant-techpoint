@@ -112,8 +112,10 @@ class LanApiClient(BaseApiClient):
         self._token = entry_data.get("lan_token")
         self._intrusion_profile_id: Optional[int] = None
 
-    def _headers(self) -> Dict[str, str]:
-        h = {"Accept": "application/json", "Content-Type": "application/json"}
+    def _headers(self, has_body: bool = False) -> Dict[str, str]:
+        h = {"Accept": "application/json"}
+        if has_body:
+            h["Content-Type"] = "application/json"
         if self._token:
             h["Authorization"] = f"Bearer {self._token}"
         return h
@@ -122,7 +124,7 @@ class LanApiClient(BaseApiClient):
         self, method: str, path: str, params: Optional[Dict[str, Any]] = None, body: Optional[Any] = None
     ) -> Any:
         url = f"{self.base_url}{path}"
-        headers = self._headers()
+        headers = self._headers(has_body=body is not None)
         auth = None
         if self.data.get("lan_username") or self.data.get("lan_password"):
             from aiohttp import BasicAuth
@@ -501,50 +503,34 @@ class LanApiClient(BaseApiClient):
     async def get_io_userdefined(self, io_type: int) -> List[Dict[str, Any]]:
         """Fetch user-defined inputs (28) or outputs (29) with their current state.
 
-        TechPoint uses RapidJSON and requires a valid JSON body on all requests.
-        Attempts in order:
-          1. GET /config/io/userdefined  body={}            (all IO, filter client-side)
-          2. POST /config/io/filter      body={"ioFilter":{...}}
-          3. POST /management/io/status  body={"ioFilter":{...}}
+        Per TechPoint Swagger spec v1.13.0:
+          GET /config/io/userdefined?ioType=N (required query param, 28 or 29)
+
+        Response per userDefinedIOs schema:
+          {id: int, name: str, iotype: int, techpoint: int,
+           state: int (0=passive, 2=active), statename: str, time: datetime}
         """
-        io_filter_body = {"ioFilter": {"ioType": int(io_type)}}
-        candidates = [
-            ("GET",  PATH_IO_USERDEFINED,          {}),
-            ("POST", "/config/io/filter",           io_filter_body),
-            ("POST", "/management/io/status",       io_filter_body),
-        ]
-        last_exc: Exception = RuntimeError("No IO endpoint worked")
-        for method, path, body in candidates:
+        js = await self._request(
+            "GET", PATH_IO_USERDEFINED, params={"ioType": int(io_type)}
+        )
+        out: List[Dict[str, Any]] = []
+        for raw in _io_records(js):
+            # Filter client-side too in case TP returns mixed types
+            r_type = raw.get("iotype")
+            if r_type is None:
+                r_type = raw.get("ioType")
             try:
-                js = await self._request(method, path, body=body)
-                all_records = _io_records(js)
-                out: List[Dict[str, Any]] = []
-                for raw in all_records:
-                    r_type = raw.get("ioType") or raw.get("io_type")
-                    try:
-                        r_type = int(r_type) if r_type is not None else -1
-                    except Exception:
-                        r_type = -1
-                    if r_type != int(io_type):
-                        continue
-                    r = dict(raw)
-                    if not r.get("id"):
-                        raw_id = r.get("ioId") or r.get("ioID") or r.get("io_id")
-                        r["id"] = _int_id(raw_id)
-                    if not r.get("name"):
-                        r["name"] = r.get("ioName") or r.get("displayName") or r.get("text")
-                    out.append(r)
-                _LOGGER.debug(
-                    "TechPoint IO ioType=%s: %s %s → %d records", io_type, method, path, len(out)
-                )
-                return out
-            except Exception as exc:
-                _LOGGER.debug(
-                    "TechPoint IO probe failed: %s %s → %s", method, path, exc
-                )
-                last_exc = exc
+                r_type = int(r_type) if r_type is not None else -1
+            except Exception:
+                r_type = -1
+            if r_type != int(io_type):
                 continue
-        raise last_exc
+            r = dict(raw)
+            # Normalize: entities use "ioType" — copy from "iotype" (per spec)
+            if "ioType" not in r:
+                r["ioType"] = r_type
+            out.append(r)
+        return out
 
     async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).

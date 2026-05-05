@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-05-04
+
+### Fixed
+- IO userdefined endpoint now matches official TechPoint Swagger v1.13.0 spec:
+  `GET /config/io/userdefined?ioType=N` (where N is 28 for inputs, 29 for outputs).
+- `_request` no longer sends `Content-Type: application/json` on requests without a body.
+  This was causing TP's RapidJSON parser to attempt to parse the empty body and fail
+  with 400 "Could not parse input" on every GET that used the JSON content header.
+
+### Note
+- Response field is `iotype` (lowercase) per spec, not `ioType` — coordinator now reads
+  the correct field name. Other fields per spec: `id` (int), `name`, `techpoint`,
+  `state` (0=passive, 2=active), `statename`, `time`.
+
 ## [0.8.0] - 2026-05-04
 
 ### Fixed
