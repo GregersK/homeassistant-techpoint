@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-05-05
+
+### Fixed
+- IO userdefined: TP firmware parses the request body even on GET and rejects
+  the empty `{}` default body with 400 "Expected ioFilter member". `get_io_userdefined`
+  now sends `{"ioFilter": {"ioType": N}}` as the body alongside the `?ioType=N`
+  query param, so it works on every firmware variant.
+- Diagnostics no longer triggers a "blocking call to import_module" warning at
+  HA startup. Switched from `homeassistant.helpers.redact.redact_data` to
+  `homeassistant.components.diagnostics.async_redact_data` — the canonical
+  helper that's eagerly loaded by HA's diagnostics component.
+
 ## [0.8.3] - 2026-05-05
 
 ### Fixed

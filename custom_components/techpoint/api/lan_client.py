@@ -511,9 +511,17 @@ class LanApiClient(BaseApiClient):
         Response per userDefinedIOs schema:
           {id: int, name: str, iotype: int, techpoint: int,
            state: int (0=passive, 2=active), statename: str, time: datetime}
+
+        TP firmware also parses the request body and rejects it with
+        "Expected ioFilter member" if the body is empty `{}` (the default that
+        _request adds for Content-Type: application/json compliance). We send
+        `{"ioFilter": {"ioType": N}}` so TP accepts it on every firmware variant.
         """
         js = await self._request(
-            "GET", PATH_IO_USERDEFINED, params={"ioType": int(io_type)}
+            "GET",
+            PATH_IO_USERDEFINED,
+            params={"ioType": int(io_type)},
+            body={"ioFilter": {"ioType": int(io_type)}},
         )
         out: List[Dict[str, Any]] = []
         for raw in _io_records(js):
