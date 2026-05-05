@@ -67,12 +67,12 @@ class TechPointOutputSwitch(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
-        await client.set_io_userdefined({"ids": [{"id": self._output_id, "status": 2}]})
+        await client.set_io_userdefined({"ios": [{"id": int(self._output_id), "status": 2}]})
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
-        await client.set_io_userdefined({"ids": [{"id": self._output_id, "status": 0}]})
+        await client.set_io_userdefined({"ios": [{"id": int(self._output_id), "status": 0}]})
         await self.coordinator.async_request_refresh()
 
     @property

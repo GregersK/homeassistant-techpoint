@@ -314,7 +314,7 @@ config_set_io_userdefined:
         text: {}
     body:
       required: true
-      example: '{"ids": [{"id": "0", "status": 2}]}'
+      example: '{"ios": [{"id": 1, "status": 2}]}'
       selector:
         object: {}
 

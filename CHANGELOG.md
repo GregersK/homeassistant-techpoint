@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-05-05
+
+### Fixed
+- Output toggle (switch turn_on/turn_off) was failing with 400 "RapidJson internal
+  assertion failed". Two bugs in the POST body for `set_io_userdefined`:
+  1. `id` was sent as a string (`"1"`) instead of an integer (`1`) — RapidJSON's
+     C++ type assertion fires when it reads the wrong JSON type.
+  2. Wrapper key was `ids` instead of `ios` per TechPoint's API schema.
+  Body is now `{"ios": [{"id": <int>, "status": 2|0}]}`.
+- Updated `services.yaml` example body to match the corrected format.
+
 ## [0.8.4] - 2026-05-05
 
 ### Fixed
