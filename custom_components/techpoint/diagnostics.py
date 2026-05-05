@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.redact import redact_data
 
 from .const import DOMAIN
 
@@ -33,7 +33,7 @@ async def async_get_config_entry_diagnostics(
 
     # "cfg" is stored by webhook setup (LAN mode); fall back to entry data for cloud mode.
     cfg = (data.get("cfg") or {**entry.data, **(entry.options or {})}).copy()
-    cfg = redact_data(cfg, REDACT_KEYS)
+    cfg = async_redact_data(cfg, REDACT_KEYS)
 
     event_log = data.get("event_log") or []
     last_event = event_log[-1] if isinstance(event_log, list) and event_log else None
