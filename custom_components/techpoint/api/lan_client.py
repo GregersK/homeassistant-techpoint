@@ -112,10 +112,8 @@ class LanApiClient(BaseApiClient):
         self._token = entry_data.get("lan_token")
         self._intrusion_profile_id: Optional[int] = None
 
-    def _headers(self, has_body: bool = False) -> Dict[str, str]:
-        h = {"Accept": "application/json"}
-        if has_body:
-            h["Content-Type"] = "application/json"
+    def _headers(self) -> Dict[str, str]:
+        h = {"Accept": "application/json", "Content-Type": "application/json"}
         if self._token:
             h["Authorization"] = f"Bearer {self._token}"
         return h
@@ -124,13 +122,17 @@ class LanApiClient(BaseApiClient):
         self, method: str, path: str, params: Optional[Dict[str, Any]] = None, body: Optional[Any] = None
     ) -> Any:
         url = f"{self.base_url}{path}"
-        headers = self._headers(has_body=body is not None)
+        headers = self._headers()
+        # TechPoint requires Content-Type: application/json AND a valid JSON body on every
+        # request (RapidJSON parser rejects missing body when Content-Type is set). Send {}
+        # for requests that have no explicit body.
+        effective_body = body if body is not None else {}
         auth = None
         if self.data.get("lan_username") or self.data.get("lan_password"):
             from aiohttp import BasicAuth
             auth = BasicAuth(self.data.get("lan_username") or "", self.data.get("lan_password") or "")
         try:
-            async with self.session.request(method, url, headers=headers, params=params, json=body, auth=auth, timeout=25) as resp:
+            async with self.session.request(method, url, headers=headers, params=params, json=effective_body, auth=auth, timeout=25) as resp:
                 # Giv bedre fejlbeskeder end aiohttp's raise_for_status (som ikke viser body)
                 if resp.status >= 400:
                     txt = await resp.text()
