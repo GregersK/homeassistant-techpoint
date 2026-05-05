@@ -1,6 +1,8 @@
 from __future__ import annotations
-import asyncio, json
+import asyncio, json, logging as _logging
 from typing import Any, Dict, Optional, List, Union
+
+_LOGGER = _logging.getLogger(__name__)
 from aiohttp import ClientError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -499,31 +501,50 @@ class LanApiClient(BaseApiClient):
     async def get_io_userdefined(self, io_type: int) -> List[Dict[str, Any]]:
         """Fetch user-defined inputs (28) or outputs (29) with their current state.
 
-        GET without query params returns all IO; filter client-side by ioType.
-        GET with ?ioType=N → 400 "Could not parse input".
-        POST with filter body → 400 "Expected ids member" (POST is setter-only).
+        TechPoint uses RapidJSON and requires a valid JSON body on all requests.
+        Attempts in order:
+          1. GET /config/io/userdefined  body={}            (all IO, filter client-side)
+          2. POST /config/io/filter      body={"ioFilter":{...}}
+          3. POST /management/io/status  body={"ioFilter":{...}}
         """
-        js = await self._request("GET", PATH_IO_USERDEFINED)
-        all_records = _io_records(js)
-        out: List[Dict[str, Any]] = []
-        for raw in all_records:
-            r_type = raw.get("ioType") or raw.get("io_type")
+        io_filter_body = {"ioFilter": {"ioType": int(io_type)}}
+        candidates = [
+            ("GET",  PATH_IO_USERDEFINED,          {}),
+            ("POST", "/config/io/filter",           io_filter_body),
+            ("POST", "/management/io/status",       io_filter_body),
+        ]
+        last_exc: Exception = RuntimeError("No IO endpoint worked")
+        for method, path, body in candidates:
             try:
-                r_type = int(r_type) if r_type is not None else -1
-            except Exception:
-                r_type = -1
-            if r_type != int(io_type):
+                js = await self._request(method, path, body=body)
+                all_records = _io_records(js)
+                out: List[Dict[str, Any]] = []
+                for raw in all_records:
+                    r_type = raw.get("ioType") or raw.get("io_type")
+                    try:
+                        r_type = int(r_type) if r_type is not None else -1
+                    except Exception:
+                        r_type = -1
+                    if r_type != int(io_type):
+                        continue
+                    r = dict(raw)
+                    if not r.get("id"):
+                        raw_id = r.get("ioId") or r.get("ioID") or r.get("io_id")
+                        r["id"] = _int_id(raw_id)
+                    if not r.get("name"):
+                        r["name"] = r.get("ioName") or r.get("displayName") or r.get("text")
+                    out.append(r)
+                _LOGGER.debug(
+                    "TechPoint IO ioType=%s: %s %s → %d records", io_type, method, path, len(out)
+                )
+                return out
+            except Exception as exc:
+                _LOGGER.debug(
+                    "TechPoint IO probe failed: %s %s → %s", method, path, exc
+                )
+                last_exc = exc
                 continue
-            r = dict(raw)
-            # Normalize: ensure "id" is always populated (TechPoint may use ioId)
-            if not r.get("id"):
-                raw_id = r.get("ioId") or r.get("ioID") or r.get("io_id")
-                r["id"] = _int_id(raw_id)
-            # Normalize: ensure "name" is always populated
-            if not r.get("name"):
-                r["name"] = r.get("ioName") or r.get("displayName") or r.get("text")
-            out.append(r)
-        return out
+        raise last_exc
 
     async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
