@@ -49,6 +49,11 @@ async def async_setup_entry(
         if did is None:
             continue
         entities.append(TechPointDoorModeSelect(coord, entry.entry_id, d))
+
+    # Threat level select (controller-level, one per entry).
+    if snapshot.get("threat_level") is not None or hasattr(coord.client, "get_threat_level"):
+        entities.append(TechPointThreatLevelSelect(coord, entry.entry_id))
+
     async_add_entities(entities)
 
 
@@ -114,3 +119,70 @@ class TechPointDoorModeSelect(CoordinatorEntity, SelectEntity):
             "raw_id": door.get("id"),
             "raw": door.get("raw"),
         }
+
+
+# ---------- Threat level ----------
+
+_THREAT_LEVEL_OPTIONS = ["off", "normal", "level_1", "level_2", "level_3"]
+
+_THREAT_LEVEL_TO_API: dict[str, int] = {
+    "off": 0,
+    "normal": 1,
+    "level_1": 2,
+    "level_2": 3,
+    "level_3": 4,
+}
+
+_API_TO_THREAT_LEVEL: dict[int, str] = {v: k for k, v in _THREAT_LEVEL_TO_API.items()}
+
+
+class TechPointThreatLevelSelect(CoordinatorEntity, SelectEntity):
+    """Controller-level select entity for TechPoint threat level (0–4).
+
+    Level 0 disables threat-level periods; levels 1–4 activate them.
+    Maps to GET/POST /management/threatLevel (API v1.13.0).
+    """
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:shield-alert"
+
+    def __init__(self, coordinator: TechPointCoordinator, entry_id: str) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._attr_unique_id = f"{entry_id}_threat_level"
+        self._attr_options = _THREAT_LEVEL_OPTIONS
+
+    @property
+    def name(self) -> str:
+        return "Threat level"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self.coordinator.name,
+        )
+
+    @property
+    def current_option(self) -> str | None:
+        level = (self.coordinator.data or {}).get("threat_level")
+        if level is None:
+            return None
+        try:
+            return _API_TO_THREAT_LEVEL.get(int(level))
+        except Exception:
+            return None
+
+    @property
+    def available(self) -> bool:
+        return (self.coordinator.data or {}).get("threat_level") is not None
+
+    async def async_select_option(self, option: str) -> None:
+        client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
+        await client.set_threat_level(_THREAT_LEVEL_TO_API.get(option, 0))
+        await self.coordinator.async_request_refresh()
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        level = (self.coordinator.data or {}).get("threat_level")
+        return {"level_numeric": level}

@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
 from .device import make_device_context, build_device_info
+from .util import find_by_id, normalize_id
 
 
 async def async_setup_entry(
@@ -31,6 +32,13 @@ async def async_setup_entry(
 
     for inp in snapshot.get("io_inputs", []):
         entities.append(TechPointInputSensor(coord, entry.entry_id, inp))
+
+    for door in snapshot.get("doors", []):
+        did = normalize_id(door.get("id"))
+        if did is None:
+            continue
+        entities.append(TechPointDoorOpenSensor(coord, entry.entry_id, door))
+        entities.append(TechPointDoorSabotageSensor(coord, entry.entry_id, door))
 
     if entities:
         async_add_entities(entities)
@@ -135,4 +143,109 @@ class TechPointInputSensor(CoordinatorEntity, BinarySensorEntity):
             "techpoint_id": inp.get("techpoint"),
             "state_raw": inp.get("state"),
             "last_changed": inp.get("time"),
+        }
+
+
+class TechPointDoorOpenSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor that is ON when a door is physically open (position=4).
+
+    Useful for automations such as "door held open" alerts.
+    """
+
+    _attr_has_entity_name = True
+    _attr_device_class = BinarySensorDeviceClass.DOOR
+
+    def __init__(self, coordinator: TechPointCoordinator, entry_id: str, door: dict[str, Any]) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._door_id = normalize_id(door.get("id"))
+        self._attr_unique_id = f"{entry_id}_door_{self._door_id}_open"
+
+    def _current(self) -> dict[str, Any] | None:
+        snapshot = self.coordinator.data or {}
+        return find_by_id(snapshot.get("doors"), self._door_id)
+
+    @property
+    def name(self) -> str:
+        door = self._current() or {}
+        base = door.get("name") or f"{self._door_id}"
+        return f"{base} (Åben)"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
+        door = self._current() or {}
+        base = door.get("name") or f"{self._door_id}"
+        return build_device_info(ctx, grouping, "door", item_id=self._door_id, item_name=str(base))
+
+    @property
+    def is_on(self) -> bool | None:
+        door = self._current()
+        if door is None:
+            return None
+        try:
+            return int(door.get("position") or 0) == 4
+        except Exception:
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        door = self._current() or {}
+        return {
+            "door_id": self._door_id,
+            "position": door.get("position"),
+            "position_text": door.get("position_text"),
+        }
+
+
+class TechPointDoorSabotageSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor that is ON when a door reports a sabotage condition.
+
+    Uses the issabotage field from doorStatus (API v1.13.0).
+    """
+
+    _attr_has_entity_name = True
+    _attr_device_class = BinarySensorDeviceClass.TAMPER
+
+    def __init__(self, coordinator: TechPointCoordinator, entry_id: str, door: dict[str, Any]) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._door_id = normalize_id(door.get("id"))
+        self._attr_unique_id = f"{entry_id}_door_{self._door_id}_sabotage"
+
+    def _current(self) -> dict[str, Any] | None:
+        snapshot = self.coordinator.data or {}
+        return find_by_id(snapshot.get("doors"), self._door_id)
+
+    @property
+    def name(self) -> str:
+        door = self._current() or {}
+        base = door.get("name") or f"{self._door_id}"
+        return f"{base} (Sabotage)"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
+        ctx = make_device_context(self.coordinator.hass, self._entry_id, self.coordinator.name)
+        door = self._current() or {}
+        base = door.get("name") or f"{self._door_id}"
+        return build_device_info(ctx, grouping, "door", item_id=self._door_id, item_name=str(base))
+
+    @property
+    def is_on(self) -> bool | None:
+        door = self._current()
+        if door is None:
+            return None
+        sabotage = door.get("issabotage")
+        if sabotage is None:
+            return None
+        return bool(sabotage)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        door = self._current() or {}
+        return {
+            "door_id": self._door_id,
+            "issabotage": door.get("issabotage"),
         }
