@@ -545,7 +545,7 @@ class LanApiClient(BaseApiClient):
     async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
 
-        Body: {"ids": [{"id": 0, "state": 2}]}  – id is integer, state 0=passive, 2=active
+        Body: {"ids": [{"id": 0}], "status": 2}  – status at top level (0=passive, 2=active), id-only objects in ids array
         """
         return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 
