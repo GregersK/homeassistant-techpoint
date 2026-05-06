@@ -16,7 +16,7 @@
       "cloud": {
         "data": {
           "auth_type": "Auth type (normally 2)",
-          "base_url": "Cloud base URL (e.g. https://example.azurewebsites.net)",
+          "base_url": "Cloud base URL",
           "device_id": "Device ID",
           "name": "Name",
           "password": "Password",

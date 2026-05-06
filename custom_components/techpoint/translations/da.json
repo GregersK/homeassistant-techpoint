@@ -16,7 +16,7 @@
       "cloud": {
         "data": {
           "auth_type": "Godkendelsestype (normalt 2)",
-          "base_url": "Cloud basis-URL (f.eks. https://example.azurewebsites.net)",
+          "base_url": "Cloud basis-URL",
           "device_id": "Enheds-ID",
           "name": "Navn",
           "password": "Adgangskode",

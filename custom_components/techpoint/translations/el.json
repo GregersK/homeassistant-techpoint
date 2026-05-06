@@ -9,7 +9,7 @@
       "cloud": {
         "data": {
           "auth_type": "Τύπος ελέγχου ταυτότητας (συνήθως 2)",
-          "base_url": "Βασικό URL Cloud (π.χ. https://example.azurewebsites.net)",
+          "base_url": "Βασικό URL Cloud",
           "device_id": "Αναγνωριστικό συσκευής",
           "name": "Όνομα",
           "password": "Κωδικός πρόσβασης",

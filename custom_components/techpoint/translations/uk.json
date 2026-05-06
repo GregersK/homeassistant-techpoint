@@ -29,7 +29,7 @@
       "cloud": {
         "data": {
           "auth_type": "Тип автентифікації (зазвичай 2)",
-          "base_url": "Базова URL хмари (напр. https://example.azurewebsites.net)",
+          "base_url": "Базова URL хмари",
           "device_id": "Ідентифікатор пристрою",
           "name": "Назва",
           "password": "Пароль",

@@ -9,7 +9,7 @@
       "cloud": {
         "data": {
           "auth_type": "Todennustyyppi (yleensä 2)",
-          "base_url": "Cloud-pohja-URL (esim. https://example.azurewebsites.net)",
+          "base_url": "Cloud-pohja-URL",
           "device_id": "Laitetunnus",
           "name": "Nimi",
           "password": "Salasana",

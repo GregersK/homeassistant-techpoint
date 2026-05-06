@@ -9,7 +9,7 @@
       "cloud": {
         "data": {
           "auth_type": "Authenticatietype (normaal 2)",
-          "base_url": "Cloud basis-URL (bijv. https://example.azurewebsites.net)",
+          "base_url": "Cloud basis-URL",
           "device_id": "Apparaat-ID",
           "name": "Naam",
           "password": "Wachtwoord",
