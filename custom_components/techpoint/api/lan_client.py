@@ -523,6 +523,7 @@ class LanApiClient(BaseApiClient):
             params={"ioType": int(io_type)},
             body={"ioFilter": {"ioType": int(io_type)}},
         )
+        _LOGGER.debug("TechPoint get_io_userdefined raw response: %s", js)
         out: List[Dict[str, Any]] = []
         for raw in _io_records(js):
             # Filter client-side too in case TP returns mixed types
@@ -551,7 +552,9 @@ class LanApiClient(BaseApiClient):
 
         ioType query param mirrors the GET requirement (firmware parses it).
         """
-        # ids as a single integer (not array) — RapidJson asserts kInt64Flag on ids field
         body = {"ids": int(output_id), "status": int(status)}
-        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
+        _LOGGER.debug("TechPoint set_io_userdefined POST body: %s", body)
+        result = await self._request("POST", PATH_IO_USERDEFINED, body=body)
+        _LOGGER.debug("TechPoint set_io_userdefined response: %s", result)
+        return result
 
