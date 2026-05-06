@@ -551,11 +551,6 @@ class LanApiClient(BaseApiClient):
 
         ioType query param mirrors the GET requirement (firmware parses it).
         """
-        body = {"ids": [{"id": str(output_id), "status": int(status)}]}
-        return await self._request(
-            "POST",
-            PATH_IO_USERDEFINED,
-            params={"ioType": int(io_type)},
-            body=body,
-        )
+        body = {"ioIDs": {"ids": [{"id": int(output_id)}]}, "status": int(status)}
+        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 
