@@ -29,7 +29,7 @@
       "cloud": {
         "data": {
           "auth_type": "Autentiseringstyp (vanligtvis 2)",
-          "base_url": "Cloud-bas-URL (t.ex. https://example.azurewebsites.net)",
+          "base_url": "Cloud-bas-URL",
           "device_id": "Enhets-ID",
           "name": "Namn",
           "password": "Lösenord",

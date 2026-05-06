@@ -25,7 +25,7 @@
         "title": "TechPoint (Cloud)",
         "description": "Enter your Cloud API base URL, device id and credentials. The integration will authenticate using JWT and proxy calls to the regular TechPoint Web API.",
         "data": {
-          "base_url": "Cloud base URL (e.g. https://example.azurewebsites.net)",
+          "base_url": "Cloud base URL",
           "device_id": "Device ID",
           "username": "User name",
           "password": "Password",

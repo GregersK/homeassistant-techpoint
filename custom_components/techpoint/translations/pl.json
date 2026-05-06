@@ -9,7 +9,7 @@
       "cloud": {
         "data": {
           "auth_type": "Typ uwierzytelniania (zazwyczaj 2)",
-          "base_url": "Podstawowy URL Cloud (np. https://example.azurewebsites.net)",
+          "base_url": "Podstawowy URL Cloud",
           "device_id": "ID urządzenia",
           "name": "Nazwa",
           "password": "Hasło",

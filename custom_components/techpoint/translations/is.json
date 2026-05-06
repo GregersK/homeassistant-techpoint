@@ -9,7 +9,7 @@
       "cloud": {
         "data": {
           "auth_type": "Auðkenningartegund (venjulega 2)",
-          "base_url": "Cloud grunnslóð (t.d. https://example.azurewebsites.net)",
+          "base_url": "Cloud grunnslóð",
           "device_id": "Tækjaauðkenni",
           "name": "Nafn",
           "password": "Lykilorð",
