@@ -551,6 +551,7 @@ class LanApiClient(BaseApiClient):
 
         ioType query param mirrors the GET requirement (firmware parses it).
         """
-        body = {"ioIDs": {"ids": [{"id": int(output_id)}]}, "status": int(status)}
+        # ids as a single integer (not array) — RapidJson asserts kInt64Flag on ids field
+        body = {"ids": int(output_id), "status": int(status)}
         return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 
