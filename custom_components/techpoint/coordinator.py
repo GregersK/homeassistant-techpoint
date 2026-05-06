@@ -30,13 +30,15 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self._disabled_keys: set[str] = set()
 
     async def _async_update_data(self) -> Dict[str, Any]:
-        """Fetch doors, AIA area/zone status, user-defined I/O and cardholder count."""
+        """Fetch doors, AIA area/zone status, user-defined I/O, cardholder count, and controller state."""
         try:
             list_areas = getattr(self.client, "list_areas_status", None) or getattr(self.client, "list_areas", None)
             list_zones = getattr(self.client, "list_zones_status", None) or getattr(self.client, "list_zones", None)
             get_api_info = getattr(self.client, "get_api_info", None)
             get_io = getattr(self.client, "get_io_userdefined", None)
             list_cardholders_filter = getattr(self.client, "list_card_holders_filter", None)
+            get_global_door_control = getattr(self.client, "get_global_door_control", None)
+            get_threat_level = getattr(self.client, "get_threat_level", None)
 
             tasks: list = [self.client.list_doors()]
             task_keys = ["doors"]
@@ -59,12 +61,19 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             if list_cardholders_filter and "cardholders_meta" not in self._disabled_keys:
                 tasks.append(list_cardholders_filter({"cardHolderFilter": {"doNotFetchData": True}}))
                 task_keys.append("cardholders_meta")
+            if get_global_door_control and "global_door_control" not in self._disabled_keys:
+                tasks.append(get_global_door_control())
+                task_keys.append("global_door_control")
+            if get_threat_level and "threat_level" not in self._disabled_keys:
+                tasks.append(get_threat_level())
+                task_keys.append("threat_level")
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             data: Dict[str, Any] = {
                 "doors": [], "areas": [], "zones": [], "api_info": {},
                 "io_inputs": [], "io_outputs": [], "cardholder_count": None,
+                "global_door_control_active": None, "threat_level": None,
             }
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
@@ -82,6 +91,10 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                     continue
                 if key == "cardholders_meta":
                     data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None
+                elif key == "global_door_control":
+                    data["global_door_control_active"] = (val or {}).get("status", {}).get("active")
+                elif key == "threat_level":
+                    data["threat_level"] = (val or {}).get("currentThreatLevel", {}).get("level")
                 else:
                     data[key] = val or data.get(key, [])
 

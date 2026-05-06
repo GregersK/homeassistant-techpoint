@@ -148,6 +148,7 @@ def map_doors_status_response(js: Any) -> List[Dict[str, Any]]:
             "positionCause": cause,   # per API
             "exception": exception,   # 0 none, 1 block, 2 permOpen (if supported)
             "intrusionState": intrusion_state,
+            "issabotage": r.get("issabotage"),  # bool, added in API v1.13.0
             "position_text": _DOOR_POSITION_TX.get(int(pos), "Ukendt") if pos is not None else "Ukendt",
             "position_cause_text": _DOOR_POSITION_CAUSE_TX.get(int(cause), "Ukendt") if cause is not None else None,
             "exception_text": _DOOR_EXCEPTION_TX.get(int(exception), "Ukendt") if exception is not None else None,
