@@ -542,10 +542,20 @@ class LanApiClient(BaseApiClient):
             out.append(r)
         return out
 
-    async def set_io_userdefined(self, body: Dict[str, Any]) -> Any:
+    async def set_io_userdefined(self, output_id: int, status: int, io_type: int = 29) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
 
-        Body: {"ids": [{"id": 0}], "status": 2}  – status at top level (0=passive, 2=active), id-only objects in ids array
+        Per TechPoint OpenAPI spec v1.13.0 (userdefinedio request body):
+          ids: array of objects with id (string) and status (integer)
+          status: 0=passive, 2=active
+
+        ioType query param mirrors the GET requirement (firmware parses it).
         """
-        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
+        body = {"ids": [{"id": str(output_id), "status": int(status)}]}
+        return await self._request(
+            "POST",
+            PATH_IO_USERDEFINED,
+            params={"ioType": int(io_type)},
+            body=body,
+        )
 
