@@ -1,16 +1,16 @@
 {
+  "domain": "techpoint",
+  "name": "TechPoint",
   "codeowners": [
     "@GregersK"
   ],
   "config_flow": true,
   "documentation": "https://github.com/GregersK/homeassistant-techpoint",
-  "domain": "techpoint",
   "integration_type": "device",
   "iot_class": "local_polling",
   "loggers": [
     "custom_components.techpoint"
   ],
-  "name": "TechPoint",
   "requirements": [],
   "version": "0.9.0"
 }
