@@ -21,6 +21,9 @@ REDACT_KEYS = {
     "api_key",
     "access_token",
     "refresh_token",
+    "lan_password",
+    "lan_token",
+    "lan_username",
 }
 
 
@@ -36,7 +39,7 @@ async def async_get_config_entry_diagnostics(
     cfg = async_redact_data(cfg, REDACT_KEYS)
 
     event_log = data.get("event_log") or []
-    last_event = event_log[-1] if isinstance(event_log, list) and event_log else None
+    last_event = event_log[0] if isinstance(event_log, list) and event_log else None
 
     diag: dict[str, Any] = {
         "entry": {

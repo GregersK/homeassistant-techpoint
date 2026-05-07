@@ -306,17 +306,32 @@ config_get_io_outputs:
 
 config_set_io_userdefined:
   name: Set user-defined I/O state
-  description: "POST /config/io/userdefined – set active (2) or passive (0) state for one or more user-defined inputs or outputs."
+  description: "POST /config/io/userdefined – set active (2) or passive (0) state for a user-defined input or output."
   fields:
     entry_id:
       required: false
       selector:
         text: {}
-    body:
+    output_id:
       required: true
-      example: '{"ids": [{"id": 1, "status": 2}]}'
+      example: 831
       selector:
-        object: {}
+        number:
+          mode: box
+    status:
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 0
+          max: 2
+          mode: box
+    io_type:
+      required: false
+      example: 29
+      selector:
+        number:
+          mode: box
 
 events_get:
   name: Get events
