@@ -358,7 +358,7 @@ class TechPointEventLogSensor(SensorEntity):
         log = self._log()
         if not log:
             return "No events yet"
-        last = log[-1]
+        last = log[0]
         t = last.get("type_name") or last.get("type_id") or "Event"
         # Try to show door/reader hint
         dv = last.get("details_values") or []
@@ -370,11 +370,11 @@ class TechPointEventLogSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         log = self._log()
-        last = log[-1] if log else None
+        last = log[0] if log else None
         return {
             "count": len(log),
             "last": last,
-            # Full rolling log (newest last)
+            # Full rolling log (newest first)
             "events": log,
         }
 

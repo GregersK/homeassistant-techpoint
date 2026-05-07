@@ -5,6 +5,7 @@ from typing import Any
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
     AlarmControlPanelEntityFeature,
+    AlarmControlPanelState,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -15,16 +16,19 @@ from .const import DOMAIN
 from .coordinator import TechPointCoordinator
 from .device import make_device_context, build_device_info
 
-# Expose ARM_AWAY as supported feature (DISARM requires no flag)
-FEATURES = AlarmControlPanelEntityFeature.ARM_AWAY
+FEATURES = (
+    AlarmControlPanelEntityFeature.ARM_AWAY
+    | AlarmControlPanelEntityFeature.ARM_HOME
+    | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+)
 
-# TechPoint state -> HA state
-STATE_MAP = {
-    1: "disarmed",            # Unset
-    2: "armed_away",          # Set
-    3: "armed_home",          # Partial set
-    4: "disarmed",            # Disabled
-    5: "armed_custom_bypass", # Isolated
+# TechPoint state -> HA AlarmControlPanelState
+STATE_MAP: dict[int, AlarmControlPanelState] = {
+    1: AlarmControlPanelState.DISARMED,           # Unset
+    2: AlarmControlPanelState.ARMED_AWAY,          # Set
+    3: AlarmControlPanelState.ARMED_HOME,          # Partial set
+    4: AlarmControlPanelState.DISARMED,            # Disabled
+    5: AlarmControlPanelState.ARMED_CUSTOM_BYPASS, # Isolated
 }
 
 
@@ -81,12 +85,12 @@ class TechPointAreaAlarm(CoordinatorEntity, AlarmControlPanelEntity):
         return build_device_info(ctx, grouping, "area", item_id=self._area_id, item_name=str(base))
 
     @property
-    def state(self) -> str | None:
+    def alarm_state(self) -> AlarmControlPanelState | None:
         area = self._current() or {}
         try:
-            return STATE_MAP.get(int(area.get("state", 0)), "unknown")
+            return STATE_MAP.get(int(area.get("state", 0)))
         except Exception:  # noqa: BLE001
-            return "unknown"
+            return None
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         # TechPoint: command 2 = Unset (disarm)

@@ -385,7 +385,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async def config_set_io_userdefined(call: ServiceCall):
         try:
             client = _get_client(hass, call.data.get("entry_id"))
-            res = await client.set_io_userdefined(call.data["body"])
+            res = await client.set_io_userdefined(
+                int(call.data["output_id"]),
+                int(call.data["status"]),
+                int(call.data.get("io_type", 29)),
+            )
             return {"result": res}
         except Exception as e:
             raise HomeAssistantError(str(e))
