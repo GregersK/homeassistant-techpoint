@@ -1,0 +1,4111 @@
+openapi: 3.0.0
+info:
+  description: |-
+
+    <p>
+      <a href="http://www.techsolutions.dk"><img src="http://www.techsolutions.dk/wp-content/themes/techsolutiontheme_backup/images/logo1.png" alt="TechSolutions A/S"></img></a>
+    </p>
+    <p>
+      Last update: April 21, 2026 
+      <br/>
+      Current version: <strong>v1.13.0</strong> (likely from TechPoint v3.18.2)
+    </p>
+    <p>
+      <small>
+      </small>
+    </p>
+
+
+    This API can be used over the internet (see [TechPoint Cloud API](https://app.swaggerhub.com/apis-docs/techsolutions.dk/cloud-tech-point-api/current)).
+
+      
+
+
+    # General
+
+    Please read this. If you find something unclear, contact [TechSolutions A/S](http://www.techsolutions.dk).
+    TechPoint is [IP Door Controller](http://www.techsolutions.dk/products/techpoint-ip-door-controller/).
+
+    <details>
+    The API is available over HTTPS; API client will need to obtain TechPoint public key (auto generated for each device) in order to authenticate TechPoint API end point .
+    This API does not conform to REST spec.
+
+    **It uses basic HTTP methods (GET, POST, PUT, DELETE) to perform operations on resources (URLs).**
+
+    **JSON format is used for data transfer.**
+
+    **Currently, this API returns only the following HTTP codes: 200, 400, 401, 404, 405, 415, 500 and 503.**
+
+    If API call is successful, HTTP code 200 will be returned with JSON result.
+
+    If API call fails, HTTP error 400 or 500 will be returned with JSON **errorResult** object (HTTP error 500 will be used for internal TechPoint errors).
+
+    If API call fails for reason that resource is not found, HTTP error 404 will be returned with JSON  object **errorResultRecordsNotFound**.
+
+
+    When GET method returns only single record, the result includes  array but it will contain only single element (this is because of compatibility with other GET methods and for for future use).
+    Datetime is specified as UTC time, in ISO 8601 format (result of Date.toJSON in javascript) e.g. 2012-04-23T18:25:43Z or 2012-04-23T18:25:43.511Z.
+    In general, if any JSON property is optional that means that is also nullable.
+
+    **Important when using PUT verb for update:<sup>1</sup>**
+    * Only specify JSON fields you want to update (except identity), i.e., you have to omit fields you don't want to update.
+    * Typically, you must specify identity field (e.g, "id") in order to identify the object you are updating.
+    * If you don't want to update certain field, setting the field to null will not suffice - it must be omitted.
+    * Therefore the PUT verb used in this API behaves more like PATCH verb.
+
+
+    **Not fully implemented yet (planned for next versions):**
+    * /idmap/resolve is not implemented
+
+
+    </details>
+    </br>
+    **How to configure TechPoint to enable WebApi:**
+
+    <details>
+
+    * Acquire TechPoint Api license from Techsolutions and activate it
+    * After license is applied (restart), go to System/System Settings/Administration/Web API and make sure that "Enable API" is checked. Save settings.
+    * Now, go to user editor (Users/Users) and edit existing or create new user so that on main tab "Enable Web API Access" is checked, and on "Web API rights" tab which will be shown "Allow all" is checked. Save settings. Note that username and password of this user you will use to authenticate to Web API. </details>
+
+    # Change log
+    **Changes in 1.13.0 - :**
+    * Added DELETE method for idMap
+    * Added GET/POST methods for Global door Control
+    * Added GET/POST methods for Threat level Control
+    * Added GET/POST method for User defined input/Outputs
+    * Added new issabotage element for door status
+
+    **Changes in 1.12.0 - id map:** 
+    * Added id map endpoint (/idmap POST) which enables setting external id on existing records (already inserted without external id). This can be useful in cases when integration is required with existing system that has already been in use.
+    * Added new JSON type idMap.
+    * Removed docs for /idmap/resolve (as it is not yet implemented, when implemented, it will likely be /idmap GET).
+
+
+    **Changes in 1.1.11 - access schedules:** <details>
+    * Note that API version jumped from 1.9.0 to 1.11.0 (no 1.10.x). 
+    * Intro: The goal is to extend/override door week programs functionality for specific intervals (valid from/to) for which we set the week program door function that will be executed. It is because week programs are limited for weekly execution and this allows much more control. We also support functionality to disable access for specific access group(s) - disable access for card holders in those access groups regardless if they have allowed access in regular settings. For now, for access groups, we only support “No access” function (function null value).
+    * Added access schedules configuration endpoints (/config/accessSchedules GET, POST, PUT, DELETE).
+    * Added access schedules filter endpoint (/config/accessSchedules/filter POST).
+    * Added new JSON types accessSchedule (and related inner types), accessScheduleFilter and accessScheduleFilterResult.
+    * Documentation update: removed "EXPERIMENTAL" marker from API-Reader that was added in 1.9.0 and "Alpha" from 1.8.1 - Proxy API (now supported as specified).
+
+
+    **v1.8.1 and 1.9.0**     
+    **Changes in 1.9.0 - API-Reader:**
+    * Changed "EXPERIMENTAL" marker for Proxy API to "Alpha" (there were no changes in proxy implementation).
+    * API-Reader feature enables you to implement your own card reader just by using this API. It could be software module acting as reader or actual hardware device.
+    * It is using API path <strong>/apireader</strong> (/api/v1/apireader).
+    * <strong>Important</strong>: You cannot access /apireader path with existing authentication for regular Web API.
+    * Start by creating new reader in TechPoint Web UI; under System/Configuration/Card Readers menu click on New. This will open Reader editor. Under "Reader Protocol" tab in "Communication" combo box select "TCP-IP" and in "Reader protocol" combo box select "Web API". After selecting "Web API" in combo box, "Web API" tab will appear where you will see user name and password (autogenerated) for new reader - you need to click on "Save" first.
+    * If reader is created in multi TechPoint environment and it is not on Master, you will have to connect to that particular device IP. This information is also shown on "Web API" tab of Reader editor, under "API base URL" field. If reader API is accessed over Cloud, then you can only connect to Master and communication will be appropriately routed to destination device for you.
+    * Before you can do any interaction on /apireader, you have to first call /apireader/config/reportCapability. Among other fields, this request contains polling period that TechPoint Server will respect and if "pollTimeSec" is not respected it will mark reader as offline at which point you will have to make API call of reportCapability again. To maintain online presence of a reader, periodically call /apireader/poll.
+    * Any interaction under /apireader might cause error response (see arErrorResponse object) and you have to be ready to handle the error. E.g. if you call  /apireader/poll before reporting capability you will get error like: {"errorResponse": { "code": 6, "msg": "Needs capability report first"}}.
+    * API-Reader feature allows you to control reported inputs (/apireader/management/input). If reportCapability input count is higher than zero, then TechPoint Server will create reader input objects that you can use and, with combination of linking them to e.g. equations, control the system operations. These inputs are shown in TechPoint Web Ui under System/Configuration/IO/External Inputs.
+
+    **Changes in 1.8.1 - Proxy API:**
+    * Web API proxy is used to proxy http/s calls to local pre-configured devices. Primary use case is for secure exposure of local http devices over Cloud API. These devices are currently referred to as "Environment devices". Proxy can be used to interact with local devices (typically on LAN). Env. devices can be configured on TechPoint web page under "System Settings/Administration/Environment devices" so they are allowed to be target of proxy call, otherwise proxy call will be rejected. The HTTP auth. can be configured as well; currently Basic and Bearer authentication are supported plus there is an  option to specify one custom HTTP header that can be used for this purpose (auth. with custom header). Every Env. device has "Proxy handle name" property which is to be used inside URL segment to refer to that particular device. E.g. if you have Env. device with handle name "echo" than you will be able to issue POST call to /api/v1/proxy/echo/some_url_to_pass_to_echo?query_param1=1 and proxy will lookup "echo" device in the configuration, do the necessary authentication, pass a call to it (including URL segment after /echo, query parameters) and return response. Note that proxy does not pass HTTP headers - anything like that must be passed inside proxyRequest JSON object. Alternatively, some http headers can be preconfigured on Env. device configuration page on TechPoint Web. Web method to use can be specified inside proxyRequest.
+    * Proxy is supporting non JSON request/responses which can be used to issue any type of http request. In this case proxyRequest.body is base64 encoded which gives total flexibility of what needs to be send to the target.
+    * Issuing proxy calls over POST /proxy/{handleName}/{apiPath}.
+    * Fetching proxy configuraton. Method: GET /config/proxy.
+    * Added JSON types: envDevice, proxyRequest, proxyResponse and nameValue.
+
+    </details>
+
+    **v1.7.x**
+    <details>
+    **Changes in documentation (June 24, 2024):**
+    * Documentation update; crossId JSON object's field "extld" (for external Id) had a typo, the correct value is "extId" (capital letter I, like in word Identity). <sup>2</sup>
+
+    **Changes in 1.7.0 (January 10, 2024), TechPoint v3.8.1 - Keybox API:**
+    * Intro: Keybox is used as a locker box or safety deposit box which can be controlled (opened) in a similar manner like an elevator matrix for a door. 
+    * Fetching keybox groups and keyboxes with filtering. Method: POST /config/keyboxGroups/filter.
+    * Keybox management (open keyboxes). Method POST /management/keybox
+    * New JSON types: keybox, keyboxGroup, keyboxGroupFilter, keyboxGroupFilterResult, keyboxCommand.
+    * Fetching general static types, for now table ids/names. Method: GET /general/static/types. New JSON types: generalTypesStaticConfig, tableStaticInfo.
+    * Fetching realtime techpoint sync status <sup>1</sup>. Use existing method GET /techpoints like: /techpoints?getSyncStatus=1 
+    * Added syncStatusText to techPoint JSON type.
+    * Modified docs, reordered JSON types.
+
+    </details>
+
+    **v1.6.x**
+    <details>
+    **Changes in 1.6.0 (December 27/28/29, 2023), TechPoint v3.8.0 - APB (Anti passback) management API and more:**
+
+     * Fetching APB status with filtering (by card, card holder, area, door, reader etc.). Method: POST /management/apb/status.
+     
+     * APB management (move cards to area, move all cards from one area to another, free specific cards, free all cards in area, free all cards). Method: POST /management/apb.
+     
+     * New JSON types: apbConfig, apbStatus, apbStatusFilter, apbStatusResult, apbCommand.
+     
+     * Added field apbConfig to intrusionContainer JSON (for area).
+     
+     * Added field clearedType to eventFilter which enables fetching events (alarms/alerts) that have not been cleared. <sup>1</sup>
+     
+     * Bug fix: eventFilterResult, intrusionFilterResult, intrusionStatusResult were not including count (total count) field in the response. count field was missing in intrusionStatusResult spec as well.
+     
+     * Modified docs, reduced repetition by adding baseRecordFilter JSON which is never used directly but as a base class for: cardFilter, cardHolderFilter, eventFilter, doorFilter, intrusionFilter, and apbStatusFilter.
+     
+     * Added API GET /access/static/types for fetching static access related types configuration including card options. <sup>1</sup> Added related JSON types accessTypesStaticConfig and accessCardOptionStaticInfo. Note that card options 4 and 8 are no longer supported (from TechPoint v3.1.0) and new option 13 is added (from TechPoint v3.7.2).
+     * Added API POST /config/readers/filter for fetching readers. New JSON types: reader, readerFilter, readerFilterResult.
+
+    </details>
+    <br/> 
+    **v1.5.x**
+    <details>
+    **Changes in 1.5.2 (December 19, 2023), TechPoint v3.7.2 - bug fixes:**
+
+     * eventFilter JSON object (used in e.g. POST /events/filter) would failed to be parsed when "id" field was specified. <sup>1</sup>
+     
+     * The result of POST /management/intrusion/status where intrusionFilter JSON specified "ioType" was 17 (areas) was fetching also io types 16 (zones) and 18 (Wired zones) even when "depthLevel" was default (0). <sup>1</sup>
+
+     * Documentation update; in intrusionFilter JSON object, the "ioType" field wasn't marked as mandatory. <sup>1</sup>
+     
+
+
+    **Changes in documentation (November 20, 2023):**
+    * Documentation update; clarification of week program and week program periods default behavior - system will automatically insert missing entries if not present during insert/update (for each day there must be entry with startSecond equal to 0). Week program dayNo range increased (docs. was not up to date).
+
+    **Changes in 1.5.1 (November 14, 2023), TechPoint v3.4.0 - API for clear event, fetching event types information and bug fix:**
+
+     * Added clear event API /events/clear POST. Added related JSON types eventClearCommand and eventClearResult.
+     
+     * Added API /events/static/types GET for fetching static event types/tags configuration. Added related JSON types eventTypesStaticConfig, eventTypeStaticInfo and eventTagStaticInfo. <sup>1</sup>
+     
+    * Bug fix: POST /management/intrusion was not respecting non explicit intrusion profile account under which is executed resulting in unsuccessful execution of intrusion command. <sup>1</sup>
+    * Documentation update: clarification regarding usage of PUT verb in General section. <sup>1</sup> 
+    * Documentation update: restructured document header (collapsible details section).
+    </details>
+    <br/>
+    **v1.4.0 - v1.0.0:**
+    <details>
+
+
+    **Changes in 1.4.0 (August 18, 2023) - intrusion management API:**
+
+    * Fetching zones, wired zones, areas, and area groups. Methods: POST /config/intrusion/zones/filter, POST /config/intrusion/wiredzones/filter, POST /config/intrusion/areas/filter and POST /config/intrusion/areagroups/filter.
+    * Intrusion management (e.g. set/unset). Methods: POST /management/intrusion/status to fetch status and POST /management/intrusion to set status.
+    * Fetching intrusion profiles. Method: GET /config/intrusion/profiles.
+    * New json types: intrusionProfile, intrusionContainer, intrusionFilter, intrusionFilterResult, intrusionStatus, intrusionStatusResult, intrusionCommand.
+    * Note: intrusion configuration (create, update and delete for wired zones, areas, area groups, and intrusion profiles) is not supported.
+    * <strong>Important</strong>: If intrusion functionality is disabled (default), the intrusion API will return error "Intrusion disabled. Please enable.." . To enable intrusion, go to System/Administration/Intrusion and check "Enabled" checkbox. 
+
+
+    **Changes in documentation (August 16, 2023):**
+    * Documentation update (no changes in the API): /config/doors/filter and /management/doors/status were missing request body definition.
+
+        
+
+    **Changes in documentation (August 4, 2023):**
+    * Documentation update (no changes in the API): apiInfo json object returned by GET /info/api had "techPoint" field which was a typo (there is only "version" field).
+
+
+
+    **Changes in 1.3.1 (June 9, 2023) - watchdog:**
+    * Added bool property "isRebootEnabled" to JSON types watchdogStatus and watchdogCommand. This property controls if system will reboot when watchdog times out or it willl restart processes. By default isRebootEnabled is false and system will not reboot.
+    * After reboot or processes restart, watchdog is always deactivated. After custom watchdog caused reboot, system eventlog entry with restart cause 20 is created. If processes are restarted, system eventlog entry "Custom watchdog restarted process(es)" is inserted.
+    * Minor corrections regarding reboot in previous Change log in v1.3.0 marked with "(text updated June 9 2023)" and underlined.
+
+
+    **Changes in 1.3.0 (May 24, 2023) - watchdog:**
+    * Added watchdog API /system/watchdog GET and POST. 
+    * Added JSON types watchdogStatus and watchdogCommand.
+    * Added /ping GET for fast ping (recommended for watchdog timer reset). 
+    * To enable watchdog API, you have to allow it on Web API configuration page in case you wil be using it over HTTP/S (local LAN), or on Cloud configuration page in case you will be using it over Cloud API. Both watchdogs (web api and cloud api) have separate configurations and separate timers. It is possible to use them both simultaneously. When using /system/watchdog POST you can't specify  which watchdog you are managing; it is inferred from the context of your invocation (LAN or Cloud).
+    * Please use with caution. **Warning**: when watchdog is activated, the system will be rebooted <u>(or processes will be restarted)(text updated June 9 2023)</u> if no successful API call is received within defined timeout period **for whatever reason** (unless watchdogCommand.deactivateIfCloudUnreachable is true and timer is watchdog gets deactivated). Any successful API call will reset the watchdog to configured timeout and delay the watchdog action.
+    * After reboot, watchdog is always deactivated.
+    * Successful API call definition (that will reset watchdog timeout); For local Web API (LAN), API call is considered successful if it returns HTTP status code 200 OK. For cloud, API call is considered successful if both (1) the same as Web API (HTTP status must be 200 OK) AND (2) Device cloud method invocation status is success (as well 200 OK) - this is status code returned to cloud IoT Hub (on the internet) that had initiated the call on behalf of external Cloud API user (through Cloud API).
+
+
+    **Changes in 1.2.0 (March 15, 2023):**
+    * Support for external ID inside event details; in terms of JSON types, type for eventDetails.relatedRecord is changed from tableRecord to tableCrossRecord. Backward compatibility is preserved (as tableRecord is subset of tableCrossRecord).
+
+
+    **Changes in 1.1.0:**
+    * Added /access/cardAccess PUT method that can be used to set access for multiple cards in single API call. Added cardAccess json type definition which is used as the parameter.
+
+    **Changes in documentation:**
+
+     * Documentation update (no changes in the API): 
+    In the following objects there was a typo where the field type was specified as number instead of integer: doorStatus (positionCause, exception, intrusionState), doorCommand (newDoorState), door (instanceNumber) and in method GET /config/weekprograms (type).
+
+    **Changes in 1.0.0:**
+
+    * Version bump from 0 to 1 because of introduction of new feature called Domains (compatibility is preserved)
+    * Added /domains GET method which will return all Domains in the system
+    * For objects that are linked to domain(s), added field domainLinks which is array of id objects and represents the Domain links for that object. Note that this funcionality is enabled only if in user editor "Include domain links" option is checked (under "Web API rights" tab).
+    * <strong>Important</strong>: When the system is configured for multiple domains, the user account under which the API is used will determine what data will be returned; in case user is on Domain X, he will only be able to read records that belong to that domain and if that user creates a record it will be automatically linked to Domain X (e.g. created card holder will belong to Domain X). However, if user account is Administrator then it will be possible to configure the account to get records from all domains (under "Web API rights" tab, the option "Include data from all domains" needs to be checked) - but in this case all created records will belong to Default Domain (future versions might add support for creating records on any domain for Administrator).
+    * Added suport for webhook configuration per Domain
+
+     </details>
+     <br/>
+     
+     **v0.9.3 and lower:**
+
+     <details>
+
+    **Changes in 0.9.3:**
+    * Support for access card's options field (read/write)
+    * Added <strong>/management/simulatecardread</strong> method which can be used to simulate card read on specific door remotely causing the door to open if the card has proper access rights. Breaking change: endpoint test/cardread and testCardRead object are removed (if you were using it, simply rename the end point and in your POST, rename "testCardRead" to "simulateCardRead").
+    * Bug fix, the result of methods access/cardHolders/filter and access/cards/filter did not include extId field.
+
+
+
+    **Changes in 0.9.2:**
+    * Improvement in week program period duplication checks.
+
+    **Changes in 0.9.1:**
+
+    * Support for accessRights insert/update as part of [accessGroup](#/accessGroup)
+    * Added priority and isReusable fields on accessGroup (they were not exposed before)
+
+    **Changes in 0.9.0:**
+    * Valid from/to fields on cardAccessGroupLink now supported
+    * New type accessRight. 
+    * accessRight array added to accessGroup but readonly for now
+    * accessRight array added to door (readonly) if doorFilter specifies includeAccessRights 
+
+
+    **Changes in 0.8.2:**
+    * New API doc hosting on https://app.swaggerhub.com. 
+    * Added week program configuration (/config/weekprograms)
+    * Added holidays configuration (/config/holidays)
+    * Added access card test method (/test/cardread). You can now issue a card swipe event and see what happens in eventlog. 
+
+    **Changes in 0.8.0:**
+    *  Support for fetching door list
+    *  Support for fetching door status and door management (open, close, etc.)
+    *  New types: door, doorFilter, doorStatus, doorCommand
+    *  New endpoints: "/config/doors/filter", "/management/doors/status" and "/management/doors"
+    *  Documentation; added new sections: Configuration, Management
+
+    **Changes in 0.7.0:**
+    *  Bug fix; PUT methods for access card holders,  access cards and access groups were expecting all fields and update unspecified fields (now only id field is required)
+    *  External ID support for  access card holders,  access cards and access groups
+    *  Added  new section in documentation  "Guidelines and Info" (update how to use GET method properly). Moved uncategorized items to new section Main.
+
+    **Changes in 0.6.0 from 0.5.0:**
+    *  techPoint type, added field variantType
+    *  event type, eventTime can be null
+    *  eventFilter type, eventDetailsTypes removed
+    *  eventFilter type, techPoints array added
+    *  eventWebHook type, removed Digest auth type
+    *  POST /events/webhook/test is expecting field name "event"
+    *  POST /access/accessGroups is returning { "accessGroup" :{...}}
+    *  POST /access/cards is returning { "card" :{...}}
+    *  POST /access/cardHolders is returning { "cardHolder" :{...}}
+    *  POST /access/cards/filter is expecting {"cardFilter":{}}
+    *  POST /access/cardHolders/filter is expecting {"cardHolderFilter":{}}
+    </details>
+    <p>
+      <hr/>
+      <b>Footnotes</b>
+      <ul>
+      <li><sup>1</sup> <small>Thanks Y.D. on feedback.</small></li>
+      <li><sup>2</sup> <small>Thanks A.K. on feedback.</small></li>
+      </ul>
+      <hr/>
+    </p>
+  version: '1'
+  title: TechPoint API
+  contact:
+    name: Mevludin Opardija
+    email: meo@techsolutions.dk
+    url: 'http://www.techsolutions.dk/products/techpoint-ip-door-controller'
+  license:
+    name: TechSolutions A/S. All rights reserved.
+security:
+  - Basic_authentication: []
+paths:
+  /info/api:
+    get:
+      description: 'General API and system  information, version etc.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiInfo'
+      tags:
+        - General
+  /ping:
+    get:
+      description: Fast ping. Recommended for watchdog ping. Returns empty response.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - General
+  /techpoints:
+    get:
+      description: 'Get list of all TechPoints (usefull in multi TechPoint mode). To fetch realtime sync status text in response, specify getSyncStatus with value equal to 1. e.g. /techpoints?getSyncStatus=1'
+      parameters:
+        - name: getSyncStatus
+          in: query
+          required: false
+          description: Specify the parameter if you want response to include realtime sync status value (techPoint.syncStatusText).
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/techPoint'
+      tags:
+        - General
+  /domains:
+    get:
+      description: 'Get Domain(s). If id is omitted, all Domains will be returned. If the system is not running in Domains mode, empty array will be returned.'
+      parameters:
+        - $ref: '#/components/parameters/paramId'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/domain'
+      tags:
+        - General
+  /idmap:
+    delete:
+      description: Delete cross records
+      responses:
+        '200':
+          description: Deleted.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recordIDs
+              properties:
+                recordIDs:
+                  type: array
+                  maxItems: 50
+                  items:
+                    $ref: '#/components/schemas/tableCrosstableidRecord'
+        required: true
+      tags:
+        - General
+    post:
+      description: |-
+        Used to set external id for existing (already inserted) record (identified by table id and record id). Ignore techPointId field inside tableCrossRecord.
+        Note: you can set external id only for a record if it hasn't been set already.
+        Max number of array elements is 50.
+      responses:
+        '200':
+          description: Status 200
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recordIDs
+              properties:
+                recordIDs:
+                  type: array
+                  maxItems: 50
+                  items:
+                    $ref: '#/components/schemas/tableCrossRecord'
+                '':
+                  type: string
+                  x-stoplight:
+                    id: vt6va7lytni9h
+        required: true
+      tags:
+        - General
+  /general/static/types:
+    get:
+      description: Get general static types configuration including table ids/names. Note that you will always get the same result form the same TechPoint version. The configuration might change between TechPoint versions.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - generalTypesStaticConfig
+                type: object
+                properties:
+                  generalTypesStaticConfig:
+                    $ref: '#/components/schemas/generalTypesStaticConfig'
+      tags:
+        - General
+  /access/static/types:
+    get:
+      description: Get access related static types configuration including card options. Note that you will always get the same result form the same TechPoint version. The configuration might change between TechPoint versions.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - accessTypesStaticConfig
+                type: object
+                properties:
+                  accessTypesStaticConfig:
+                    $ref: '#/components/schemas/accessTypesStaticConfig'
+      tags:
+        - Access
+  /access/accessGroups:
+    get:
+      description: |-
+        Get access group(s). If no parameters are specified, all access groups are returned. If id is specified, name must be omitted.
+        From v0.9.0 accessRights array is returned as part of accessGroup object.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+        - name: name
+          in: query
+          required: false
+          description: Access group name. id must be omitted if this is used.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/accessGroup'
+      tags:
+        - Access
+    post:
+      description: |-
+        Insert access group.
+        Access rights insert is supported from v0.9.1.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New accessGroup.id.id will be assigned.
+                properties:
+                  accessGroup:
+                    $ref: '#/components/schemas/accessGroup'
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/accessGroup'
+    put:
+      description: Update access group.  Omitted fields are not updated.  Id cannot be updated. Access rights update is supported from v0.9.1.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/accessGroup'
+    delete:
+      description: 'Delete access group, linked access rights, and links to cards.'
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Access
+  /access/cards:
+    get:
+      description: |-
+        Get single card.
+        One of query parameters must be specified.
+        cardNumber must be omitted if id  is used.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+        - name: cardNumber
+          in: query
+          required: false
+          description: id must be omitted if this is used.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/card'
+      tags:
+        - Access
+    post:
+      description: Insert card.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New card.id.id will be assigned.
+                properties:
+                  card:
+                    $ref: '#/components/schemas/card'
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/card'
+    put:
+      description: Update card data. Omitted fields are not updated. Id cannot be updated.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/card'
+    delete:
+      description: 'Delete card and its link to card holder, access rights etc.'
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Access
+  /access/cardAccess:
+    put:
+      description: 'Update access for one or more cards in single API call. Available from API v1.1.0. You can update access groups, isBlocked, and card options. Omitted fields are not updated.'
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/cardAccess'
+  /access/cards/filter:
+    post:
+      description: Fetch multiple cards with filtering and data paging support.  Use this to get the record count for specified filter.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    description: It will be null if there is no data or doNotFetchData is set to true.
+                    items:
+                      $ref: '#/components/schemas/card'
+                  count:
+                    type: integer
+                    description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.'
+      tags:
+        - Access
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cardFilter
+              properties:
+                cardFilter:
+                  $ref: '#/components/schemas/cardFilter'
+        required: true
+  /access/cardHolders:
+    get:
+      description: Get single card holder.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/cardHolder'
+      tags:
+        - Access
+    post:
+      description: Insert card holder.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New cardHolder.id.id will be assigned.
+                properties:
+                  cardHolder:
+                    $ref: '#/components/schemas/cardHolder'
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/cardHolder'
+    put:
+      description: Update card holder data. Omitted fields are not updated. Id cannot be updated.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Access
+      requestBody:
+        $ref: '#/components/requestBodies/cardHolder'
+    delete:
+      description: Delete card holder and all linked cards.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Access
+  /access/cardHolders/filter:
+    post:
+      description: Fetch multiple card holders with filtering and data paging support. Use this to get the record count for specified filter.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - count
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    description: It will be null if there is no data or doNotFetchData is set to true.
+                    items:
+                      $ref: '#/components/schemas/cardHolder'
+                  count:
+                    type: integer
+                    description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.'
+      tags:
+        - Access
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cardHolderFilter
+              properties:
+                cardHolderFilter:
+                  $ref: '#/components/schemas/cardHolderFilter'
+        required: true
+  
+  /access/globalDoorControl:
+    get:
+      tags:
+        - Access
+      description: Fetch current global door control state'
+      responses:
+        '200':
+          description: Status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/globaldoorStatus'    
+    post:
+      description: Opens all doors where 'Enable global door control.' is set' 
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Access
+      requestBody:
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/globaldoorStatus'    
+        required: true
+
+  /events/static/types:
+    get:
+      description: Get full event types static configuration including event tags and their relation to event types. Note that you will always get the same result form the same TechPoint version. The configuration might change between TechPoint versions.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - eventTypesStaticConfig
+                type: object
+                properties:
+                  eventTypesStaticConfig:
+                    $ref: '#/components/schemas/eventTypesStaticConfig'
+      tags:
+        - Events
+  /events/filter:
+    post:
+      description: 'Fetch multiple events with filtering and data paging support. Also, can be used this to get the record count for specified filter without fetching data.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/eventFilterResult'
+      tags:
+        - Events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/eventFilter'
+        required: true
+  /events/clear:
+    post:
+      description: Clear events (event types that are tagged as alarms/alerts). It can be used to clear all events (alarms) or the ones identified by event id-s. Event's cleared by field (event.clearedBy) is set to the API user account under which this method have been executed. Note that some alarms can only be auto cleared by the system itself (e.g. connection failed alarm will be automatically cleared when connection is restored).
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - eventClearResult
+                properties:
+                  eventClearResult:
+                    $ref: '#/components/schemas/eventClearResult'
+      tags:
+        - Events
+      requestBody:
+        $ref: '#/components/requestBodies/eventClearCommand'
+  /events/webhook:
+    get:
+      description: Get webhook details.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - webHook
+                type: object
+                properties:
+                  webHook:
+                    $ref: '#/components/schemas/eventWebHook'
+      tags:
+        - Events
+    post:
+      description: Create or replace existing webhook.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/eventWebHook'
+        required: true
+    delete:
+      description: Deletes web hook - if any.
+      responses:
+        '200':
+          description: Deleted
+      tags:
+        - Events
+  /events/webhook/test:
+    post:
+      description: Use this to immediately invoke web hook (for testing purposes).
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+              properties:
+                event:
+                  $ref: '#/components/schemas/event'
+        required: true
+  /config/io/userdefined:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/userdefinedfilter'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/userDefinedIOs'
+      tags:
+        - Configuration
+    post:
+      responses:
+        '200':
+          description: Status 200
+      requestBody:
+        $ref: '#/components/requestBodies/userdefinedio'
+      tags:
+        - Configuration
+
+  /config/doors/filter:
+    post:
+      description: Fetch multiple doors with filtering and data paging support.  Use this to get the record count for specified filter.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.'
+                  records:
+                    type: array
+                    description: It will be null if there is no data or doNotFetchData is set to true.
+                    items:
+                      $ref: '#/components/schemas/door'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/doorFilter'
+  /config/readers/filter:
+    post:
+      description: Fetch readers with filtering and data paging support.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/readerFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/readerFilter'
+  /system/watchdog:
+    get:
+      description: Get watchdog details.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - watchdogStatus
+                type: object
+                properties:
+                  watchdogStatus:
+                    $ref: '#/components/schemas/watchdogStatus'
+      tags:
+        - System
+    post:
+      description: Watchdog setup and (de)activation. See watchdogCommand spec.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - System
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - watchdogCommand
+              properties:
+                watchdogCommand:
+                  $ref: '#/components/schemas/watchdogCommand'
+        required: true
+  /management/doors/status:
+    post:
+      description: Fetch multiple doors status with filtering and data paging support.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.'
+                  records:
+                    type: array
+                    description: It will be null if there is no data or doNotFetchData is set to true.
+                    items:
+                      $ref: '#/components/schemas/doorStatus'
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/doorFilter'
+  /management/doors:
+    post:
+      description: |-
+        Execute  command targeting specified door(s).
+        If successful status is returned, command is sent asynchronously to the system and new status can be checked by subsequent door status API calls.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - doorCommand
+              properties:
+                doorCommand:
+                  $ref: '#/components/schemas/doorCommand'
+        required: true
+  /management/simulatecardread:
+    post:
+      description: 'Simulates the card read on specific door. If the card has proper access rights, the door will open. You can see the result of the call in event log or door status. Event log will have additional information entry "External card request (not swiped on a physical reader)" so this event is not confused with physical card read.'
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - simulateCardRead
+              properties:
+                simulateCardRead:
+                  $ref: '#/components/schemas/simulateCardRead'
+        required: true
+  /management/intrusion/status:
+    post:
+      description: 'Get intrusion status. In case you want human readable status text to be included in the result, be sure to set intrusionFilter.includeStatusText field to true.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/intrusionStatusResult'
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionFilter'
+  /management/intrusion:
+    post:
+      description: Set intrusion status for one or more objects (async).
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionCommand'
+  /management/apb/status:
+    post:
+      description: 'Get APB status. In case you want more human readable details to be included in the result, be sure to set apbStatusFilter.includeDetails field to true.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apbStatusResult'
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/apbStatusFilter'
+  /management/apb:
+    post:
+      description: Execute APB command (async).
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/apbCommand'
+  /management/keybox:
+    post:
+      description: 'Execute keybox command (async), typically open, one or more keyboxes.'
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Management
+      requestBody:
+        $ref: '#/components/requestBodies/keyboxCommand'
+  /management/threatLevel:
+    post:
+      description: 'Controls actual threat level. All weekprograms will have additional periods where special functions can be selected base on the Threat level. Level 0 will hide all additional periods and values from 1-4 enables those periods'
+      responses:
+        '200':
+          description: Status 200
+      requestBody:
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/threatLevelControl'    
+        required: true
+      tags:
+        - Management
+    get:
+      description: 'Fetch current threat level.'
+      responses:
+        '200':
+          description: Status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/threatLevelStatus'    
+      tags:
+        - Management
+  /config/weekprograms:
+    get:
+      description: 'Get week program(s). If id is not specified, then type must be specified which will result in all week programs of that type being returned.'
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+        - name: type
+          in: query
+          required: false
+          description: Week program type.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/weekProgram'
+      tags:
+        - Configuration
+    post:
+      description: 'Insert week program. If you don''t specify function for start second of 0 for any day, period with default function will be automatically created.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New weekProgram.id.id will be assigned.
+                properties:
+                  weekProgram:
+                    $ref: '#/components/schemas/weekProgram'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/weekProgram'
+    put:
+      description: 'Update week program. Omitted fields are not updated. Fields type and isSystem cannot be updated. If periods are specified but they are null or empty, all periods will be replaced with default periods.'
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/weekProgram'
+    delete:
+      description: Delete week program and linked week program periods.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Configuration
+  /config/holidays:
+    get:
+      description: 'Get holiday(s). If id is omitted, all holidays will be returned.'
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/holiday'
+      tags:
+        - Configuration
+    post:
+      description: Insert holiday
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New holiday.id.id will be assigned.
+                properties:
+                  holiday:
+                    $ref: '#/components/schemas/holiday'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/holiday'
+    put:
+      description: Update holiday. Omitted fields are not updated. Id cannot be updated.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/holiday'
+    delete:
+      description: Delete holiday and linked holiday periods.
+      parameters:
+        - $ref: '#/components/parameters/paramCrossId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Configuration
+  /config/intrusion/profiles:
+    get:
+      description: 'Get intrusion profile(s). If id is omitted, all intrusion profiles will be returned.'
+      parameters:
+        - $ref: '#/components/parameters/paramId'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/intrusionProfile'
+      tags:
+        - Configuration
+  /config/intrusion/zones/filter:
+    post:
+      description: 'Fetch zones with filtering and data paging support. The "ioType" may be omitted but, if specified, it must be 16.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/intrusionFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionFilter'
+  /config/intrusion/wiredzones/filter:
+    post:
+      description: 'Fetch wired zones with filtering and data paging support. The "ioType" may be omitted but, if specified, it must be 18.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/intrusionFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionFilter'
+  /config/intrusion/areas/filter:
+    post:
+      description: 'Fetch areas with filtering and data paging support. The "ioType" may be omitted but, if specified, it must be 17.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/intrusionFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionFilter'
+  /config/intrusion/areagroups/filter:
+    post:
+      description: 'Fetch areas with filtering and data paging support. The "ioType" may be omitted but, if specified, it must be 19.'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/intrusionFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/intrusionFilter'
+  /config/keyboxGroups/filter:
+    post:
+      description: Fetch keybox groups (including keyboxes) with filtering and data paging support.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/keyboxGroupFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/keyboxGroupFilter'
+  /config/accessSchedules:
+    get:
+      description: 'Get access schedule(s). If id is not specified, then all records will be returned.'
+      parameters:
+        - $ref: '#/components/parameters/paramId'
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - records
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/accessSchedule'
+      tags:
+        - Configuration
+    post:
+      description: Insert access schedule
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                type: object
+                description: New accessSchedule.id.id will be assigned.
+                properties:
+                  accessSchedule:
+                    $ref: '#/components/schemas/accessSchedule'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/accessSchedule'
+    put:
+      description: Update access schedule. Omitted fields are not updated. Id cannot be updated.
+      responses:
+        '200':
+          description: Status 200
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/accessSchedule'
+    delete:
+      description: Delete access schedule.
+      parameters:
+        - $ref: '#/components/parameters/paramId'
+      responses:
+        '200':
+          description: Deleted.
+      tags:
+        - Configuration
+  /config/accessSchedules/filter:
+    post:
+      description: Fetch access schedule with filtering and data paging support.
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/accessScheduleFilterResult'
+      tags:
+        - Configuration
+      requestBody:
+        $ref: '#/components/requestBodies/accessScheduleFilter'
+  /config/proxy:
+    get:
+      description: 'Get proxy configuration (array of Environment devices). If all parameters are omitted, all devices that support web proxy will be returned. Single query parameter may be specified.'
+      parameters:
+        - $ref: '#/components/parameters/paramId'
+        - name: handle
+          in: query
+          required: false
+          description: Select by handle name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - count
+                  - records
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: Record count
+                    default: 1
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/envDevice'
+      tags:
+        - Proxy
+        - Configuration
+  '/proxy/{handleName}/{apiPath}':
+    parameters:
+      - in: path
+        name: handleName
+        required: true
+        schema:
+          type: string
+        description: Preconfigured proxy handle name
+        example: echo
+      - in: path
+        name: apiPath
+        required: true
+        schema:
+          type: string
+        example: api/v1
+        description: It is OPTIONAL (although specified as required). API path to invoke on proxy target identified by the handle.
+    post:
+      description: POST request over proxy
+      tags:
+        - Proxy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - proxyRequest
+              properties:
+                proxyRequest:
+                  $ref: '#/components/schemas/proxyRequest'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - proxyResponse
+                type: object
+                properties:
+                  proxyResponse:
+                    $ref: '#/components/schemas/proxyResponse'
+  /apireader/info/api:
+    get:
+      description: API reader (/apireader section) specific version. This can be used to test connection to device. The call will not reach reader driver (result is returned quickly by intermediary).
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiInfo'
+      tags:
+        - API-Reader
+  /apireader/config/reportCapability:
+    post:
+      description: Report reader capability. Must be done before further interactions.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reportCapability
+              properties:
+                reportCapability:
+                  $ref: '#/components/schemas/arReportCapability'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/arEmptyResponse'
+      tags:
+        - API-Reader
+  /apireader/poll:
+    post:
+      description: Periodic poll of reader.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pollRequest
+              properties:
+                pollRequest:
+                  $ref: '#/components/schemas/arPoll'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - pollResponse
+                type: object
+                properties:
+                  pollResponse:
+                    $ref: '#/components/schemas/arPollResponse'
+      tags:
+        - API-Reader
+  /apireader/userinput/card:
+    post:
+      description: Call on card read.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cardCredentials
+              properties:
+                cardCredentials:
+                  $ref: '#/components/schemas/arUserInputCard'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - credentialsResponse
+                type: object
+                properties:
+                  credentialsResponse:
+                    $ref: '#/components/schemas/arUserInputResponse'
+      tags:
+        - API-Reader
+  /apireader/userinput/cardPin:
+    post:
+      description: Call on card pin read.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cardPinCode
+              properties:
+                cardPinCode:
+                  $ref: '#/components/schemas/arUserInputCardPin'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - credentialsResponse
+                type: object
+                properties:
+                  credentialsResponse:
+                    $ref: '#/components/schemas/arUserInputResponse'
+      tags:
+        - API-Reader
+  /apireader/userinput/cardless:
+    post:
+      description: Call on cardless read (e.g. pin entered instead of card).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cardlessCredentials
+              properties:
+                cardlessCredentials:
+                  $ref: '#/components/schemas/arUserInputCardless'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                required:
+                  - credentialsResponse
+                type: object
+                properties:
+                  credentialsResponse:
+                    $ref: '#/components/schemas/arUserInputResponse'
+      tags:
+        - API-Reader
+  /apireader/userinput/keypad:
+    post:
+      description: Call when user has pressed keys on keypad.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keypadData
+              properties:
+                keypadData:
+                  $ref: '#/components/schemas/arUserInputKeypad'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/arEmptyResponse'
+      tags:
+        - API-Reader
+  /apireader/management/input:
+    post:
+      description: Manage the state of reported inputs.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - controlInput
+              properties:
+                controlInput:
+                  $ref: '#/components/schemas/arControlInput'
+        required: true
+      responses:
+        '200':
+          description: Status 200
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/arEmptyResponse'
+      tags:
+        - API-Reader
+tags:
+  - name: Events
+  - name: Management
+  - name: Access
+  - name: General
+  - name: Configuration
+  - name: System
+  - name: Proxy
+  - name: API-Reader
+servers:
+  - url: 'https://192.168.1.123/api/v1'
+components:
+  parameters:
+    userdefinedfilter:
+      name: ioType
+      in: query
+      description: Select by type. 28 or 29 is valid
+      required: true
+      schema:
+        $ref: '#/components/schemas/userdefinedfilter'
+    paramCrossId:
+      name: id
+      in: query
+      description: Select by cross id
+      required: false
+      schema:
+        $ref: '#/components/schemas/crossId'
+    paramId:
+      name: id
+      in: query
+      description: Select by id
+      required: false
+      schema:
+        $ref: '#/components/schemas/id'
+  requestBodies:
+    userdefinedio:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ids:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "0"    
+                    status:
+                      type: integer
+                      example: 0    
+
+    doorFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - doorFilter
+            properties:
+              doorFilter:
+                $ref: '#/components/schemas/doorFilter'
+      required: true
+    readerFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - readerFilter
+            properties:
+              readerFilter:
+                $ref: '#/components/schemas/readerFilter'
+      required: true
+    accessGroup:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/accessGroup'
+      required: true
+    card:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/card'
+      required: true
+    cardAccess:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/cardAccess'
+      required: true
+    cardHolder:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/cardHolder'
+      required: true
+    weekProgram:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/weekProgram'
+      required: true
+    holiday:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/holiday'
+      required: true
+    accessSchedule:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/accessSchedule'
+      required: true
+    accessScheduleFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - accessScheduleFilter
+            properties:
+              accessScheduleFilter:
+                $ref: '#/components/schemas/accessScheduleFilter'
+      required: true
+    intrusionFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - intrusionFilter
+            properties:
+              intrusionFilter:
+                $ref: '#/components/schemas/intrusionFilter'
+      required: true
+    intrusionCommand:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - intrusionCommand
+            properties:
+              intrusionCommand:
+                $ref: '#/components/schemas/intrusionCommand'
+      required: true
+    eventClearCommand:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - eventClearCommand
+            properties:
+              eventClearCommand:
+                $ref: '#/components/schemas/eventClearCommand'
+      required: true
+    apbStatusFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - apbStatusFilter
+            properties:
+              apbStatusFilter:
+                $ref: '#/components/schemas/apbStatusFilter'
+      required: true
+    apbCommand:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - apbCommand
+            properties:
+              apbCommand:
+                $ref: '#/components/schemas/apbCommand'
+      required: true
+    keyboxGroupFilter:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - keyboxGroupFilter
+            properties:
+              keyboxGroupFilter:
+                $ref: '#/components/schemas/keyboxGroupFilter'
+      required: true
+    keyboxCommand:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - keyboxCommand
+            properties:
+              keyboxCommand:
+                $ref: '#/components/schemas/keyboxCommand'
+      required: true
+  securitySchemes:
+    Basic_authentication:
+      description: All communication must be over HTTPS.
+      type: http
+      scheme: basic
+  schemas:
+    userdefinedfilter:
+      type: object
+      properties:
+        ioFilter:
+          type: object
+          properties:
+            ioType:
+              type: integer
+              example: 28
+    userDefinedIOs:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        iotype:
+          type: integer
+          description: |-
+            28 -> inputs
+            29 -> outputs
+        techpoint:
+          type: integer
+        state:
+          type: integer
+          description: |-
+            0 -> passive
+            2 -> active
+        statename:
+          type: string
+        time:
+          type: string
+          format: date-time
+
+    threatLevelStatus:
+      type: object
+      properties:
+        currentThreatLevel:
+          type: object
+          properties:
+            level:
+              type: integer
+              description: |-
+               0 -> Threat level off
+               1 -> Threat level normal
+               2 -> Threat level 1
+               3 -> Threat level 2
+               4 -> Threat level 3
+              example: 0
+    threatLevelControl:
+      type: object
+      properties:
+        threatLevel:
+          type: object
+          properties:
+            newThreatlevel:
+              type: integer
+              description: |-
+               0 -> Threat level off
+               1 -> Threat level normal
+               2 -> Threat level 1
+               3 -> Threat level 2
+               4 -> Threat level 3
+              example: 0
+    globaldoorStatus:
+      type: object
+      properties:
+        status:
+          type: object
+          properties:
+            active:
+              type: boolean
+              description: test
+              example: true
+    apiInfo:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          $ref: '#/components/schemas/version'
+    accessCardOptionStaticInfo:
+      type: object
+      description: |-
+        Card option static information.
+        Note that card options 4 and 8 are no longer supported (from TechPoint v3.1.0) and new option 13 is added (from TechPoint v3.7.2).
+      required:
+        - id
+        - name
+        - info
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        info:
+          type: string
+    accessGroup:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          $ref: '#/components/schemas/crossId'
+        info:
+          type: string
+          example: Access to main door
+        name:
+          type: string
+          example: Main entry
+        priority:
+          type: integer
+          default: 50
+          minimum: 10
+          maximum: 50
+          example: 50
+          description: Lower number has higher priority. Reusable access groups have priority between 10 and 50. Range between 1 and 9 is reserved for access groups that are non reusable.
+        isReusable:
+          type: boolean
+          default: true
+          description: 'When inserting/updating access group this must be set to true. Specifies whether access group is shared/reused between cards. When TechPoint is running in simple access mode (without access groups visible to user), access groups are used in the background and their isReusable field is set to false and they can be used only for single access card.'
+        accessRights:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessRight'
+    accessRight:
+      type: object
+      required:
+        - doorID
+        - accessGroupID
+        - weekProgramID
+      properties:
+        doorID:
+          $ref: '#/components/schemas/id'
+        accessGroupID:
+          $ref: '#/components/schemas/crossId'
+        weekProgramID:
+          $ref: '#/components/schemas/crossId'
+      description: |-
+        Insert/update supported from v0.9.1. When inserting/updating access rights as part of accessGroup object, make sure you set accessGroupID field to null or leave it out or set it to exact id of accessGroup object.
+
+        Week program id must have value of 1, 2 or 3 (built in week programs) or reference some user defined access week program.
+        Week program id 1 is No access, id 2 is Access with pin, and id 3 is Access without pin.   
+    accessTypesStaticConfig:
+      type: object
+      description: Access types static information
+      required:
+        - deviceVersion
+        - cardOptions
+      properties:
+        deviceVersion:
+          $ref: '#/components/schemas/version'
+        cardOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessCardOptionStaticInfo'
+    accessSchedule:
+      description: 'Access schedule, containing default configuration (functions that are applied when target records function is not specified), schedule targets records (currently doors and access groups) that can be used, and finally, periods which are schedule period with validity period and optional function for each period.'
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+        info:
+          type: string
+        defaults:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessScheduleDefault'
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessScheduleTarget'
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessSchedulePeriod'
+    accessScheduleDefault:
+      description: Functions that are applied when target records function is not specified.
+      type: object
+      required:
+        - tableId
+        - function
+      properties:
+        tableId:
+          type: integer
+          description: Currently supported values are 4001 for doors and 5002 for access groups.
+        function:
+          type: integer
+          description: |-
+            Function value depend on tableId. 
+            Supported values for doors:
+            - 1: Perm Open
+            - 2: Blocked
+            - 3: Normal
+            - 5: Always pincode
+            - 6: Perm after card
+            - 7: Toggle
+            - 8: Allow toggle input
+            Note: value 4 is not used.
+
+            For access groups, only supported value is null which represents No Access.
+    accessScheduleTarget:
+      description: These is record to which access schedule is to be applied.
+      type: object
+      required:
+        - record
+      properties:
+        record:
+          $ref: '#/components/schemas/tableRecord'
+    accessScheduleFunction:
+      description: 'See accessScheduleDefault description, it fully matches this one.'
+      type: object
+      required:
+        - tableId
+        - function
+      properties:
+        tableId:
+          type: integer
+          description: 'See accessScheduleDefault description for allowed values for tableId.         '
+        function:
+          type: integer
+          description: See accessScheduleDefault description for allowed values for function.
+    accessSchedulePeriod:
+      description: These is period to which access schedule is to be applied.
+      type: object
+      required:
+        - validFrom
+        - validTo
+      properties:
+        validFrom:
+          type: string
+          format: date-time
+          description: Must be in the future.
+        validTo:
+          type: string
+          format: date-time
+          description: Must be in the future.
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessScheduleFunction'
+    accessScheduleFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>      
+        Represents filter for access schedules query. 
+        <br/>
+        All fields are optional, thus leaving this as empty object wil result in retreival of all entries.
+        <br/>
+        If you only want count of records matching your criteria, set doNotFetchData to true.
+        If you specify multiple fields, they are all applied (AND operator).
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type: string
+          format: date-time
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessScheduleTarget'
+    accessScheduleFilterResult:
+      description: The result of requested access schedules with applied filter.
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/apbStatus'
+          description: 'It will be empty or null if there is no data or accessScheduleFilter.doNotFetchData is set to true.            '
+        count:
+          type: integer
+          description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.          '
+    apbConfig:
+      description: Represents APB settings for an area. It is contained inside intrusionContainer when it represents an area. The value inside intrusionContainer will be null in case non area intrusionContainer and in case APB is disabled for an area.
+      type: object
+      required:
+        - isApbEnabled
+        - isParking
+        - isLimitEnabled
+        - limitCount
+        - apbLevel
+      properties:
+        isApbEnabled:
+          type: boolean
+          description: True if APB is enabled.
+          example: true
+        isParking:
+          type: boolean
+          description: True for parking area.
+          example: false
+        isLimitEnabled:
+          type: boolean
+          description: True if area card limit count is enabled.
+          example: false
+        limitCount:
+          type: integer
+          description: Nullable. Maximum number of cards allowed in area. Null in case limit is disabled (when isLimitEnabled is false).
+          minimum: 0
+          example: null
+        apbLevel:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: |-
+            The APB level determines how APB is operated by the system for the area:
+            - 0: None,
+            - 1: Reset every hour,
+            - 2: Reset every midnight,
+            - 3: Always
+          default: 0
+    apbStatus:
+      description: 'Represents current APB status (presence).  <br/> The parking related fields (parkAreaId, parkAreaName, parkAreaIoId, parkDoorName, parkReaderName, parkTime) will be omitted in case no parking information is present (when parkAreaId is null). Details information fields (holderFirstName, holderMiddleName, holderLastName, holderInfo, areaName, doorName, readerName, parkAreaName, parkDoorName, parkReaderName) will be omitted by default - they may be included on explicit request. <br/> If areaId is not null, it represents the current location area for given card in which case doorId and readerId show which door and reader were used to enter the area. Similar with parking - parkAreaId, parkDoorId, parkReaderId.  <br/> It is important to understand that <strong>single card maybe in two different areas at the same time (one of them being parking area). </strong> <br/> Note that id field is generated on the fly and has no special meaning other than help in case of paging through a lot of data. <br/> If card is free (APB freed, not in any area), areaId and related fields will be null. If card is free and not in parking area, there will be no status entry for the card.'
+      type: object
+      required:
+        - id
+        - timeStamp
+        - cardId
+        - cardTableId
+        - cardType
+        - cardNumber
+        - holderId
+        - holderType
+        - areaId
+        - areaIoId
+        - doorId
+        - readerId
+        - flags
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        timeStamp:
+          type: string
+          format: date-time
+          description: Time stamp of last change in APB status (when card has entered the area).
+        cardId:
+          $ref: '#/components/schemas/id'
+        cardTableId:
+          type: integer
+          description: 'In case integration with external system, the used card table id might have non default value to indicate its origin. Default value of 5001 represent regular card.'
+          default: 5001
+        cardType:
+          type: integer
+          description: It will typically be standard card type (0). The other card type is keybox (1) which is not used in APB.
+          default: 0
+        cardNumber:
+          type: string
+          example: '12345678'
+        holderId:
+          $ref: '#/components/schemas/id'
+        holderType:
+          type: integer
+          description: |-
+            The following types maybe present depening of device build and installed licenses:
+            - 0: Standard,
+            - 1: Quick,
+            - 2: Thorguard,
+            - 3: Conventus,
+            - 4: TechVisitor,
+            - 5: Salto SHIP
+          default: 0
+        holderFirstName:
+          type: string
+        holderMiddleName:
+          type: string
+        holderLastName:
+          type: string
+        holderInfo:
+          type: string
+        areaId:
+          $ref: '#/components/schemas/id'
+        areaName:
+          type: string
+        areaIoId:
+          $ref: '#/components/schemas/id'
+        doorId:
+          $ref: '#/components/schemas/id'
+        doorName:
+          type: string
+        readerId:
+          $ref: '#/components/schemas/id'
+        readerName:
+          type: string
+        parkAreaId:
+          $ref: '#/components/schemas/id'
+        parkAreaName:
+          type: string
+        parkAreaIoId:
+          $ref: '#/components/schemas/id'
+        parkDoorId:
+          $ref: '#/components/schemas/id'
+        parkDoorName:
+          type: string
+        parkReaderId:
+          $ref: '#/components/schemas/id'
+        parkReaderName:
+          type: string
+        parkTime:
+          type: string
+          format: date-time
+          description: Time stamp of last change in APB status for park related fields.
+        flags:
+          type: integer
+          default: 0
+          description: |-
+            For advanced usage.
+            More internal details on APB state. It is a bit mask with following values (hex):
+            - 0x01: Free,
+            - 0x02: Was free,
+            - 0x04: Leave parking (card left the parking area),
+            - 0x08: Enter parking (card is entering parking area),
+            - 0x10: Vehicle have left the parking area.
+    apbStatusFilter:
+      description: '<strong>This type inherits all fields from baseRecordFilter</strong> <br/>       Represents filter for current APB status (presence) query.  <br/> All fields are optional, thus leaving this as empty object wil result in retreival of all entries. <br/> If you only want count of records (e.g. how many cards are in the specified area), set doNotFetchData to true.'
+      type: object
+      properties:
+        areaIDs:
+          $ref: '#/components/schemas/idArray'
+        cardIDs:
+          $ref: '#/components/schemas/idArray'
+        cardHolderIDs:
+          $ref: '#/components/schemas/idArray'
+        cardTableId:
+          type: integer
+          description: See desciption under apbStatus.cardTableId
+          default: 5001
+        cardType:
+          type: integer
+          description: See options under apbStatus.cardType
+        cardHolderType:
+          type: integer
+          description: See options under apbStatus.holderType
+        doorIDs:
+          $ref: '#/components/schemas/idArray'
+        readerIDs:
+          $ref: '#/components/schemas/idArray'
+        includeDetails:
+          type: boolean
+          default: false
+          description: 'If true, then detailed fields in apbStatus will included in the response (such as area name, door name, card holder name etc.).'
+        applyToPark:
+          type: boolean
+          default: null
+          description: |-
+            If null (default), then filtering will be applied both on parking and non parking related fields. If true, then filtering will be applied to parking related fields in apbStatus. If false, then filtering will be applied to non parking fields in apbStatus.
+            <br>
+            For example, if you specify areaIDs and leave this field as default (null) you will get apbStatus in case specified area(s) has presence either as regular or as parking presence. On the other hand, if you set this to false you will get only non parking presence, while setting this to true will include only parking presence.
+    apbStatusResult:
+      description: The result of requested APB status with applied filter.
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/apbStatus'
+          description: 'It will be empty or null if there is no data or apbStatusFilter.doNotFetchData is set to true.            '
+        count:
+          type: integer
+          description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.            '
+    apbCommand:
+      description: 'Execute apb command.  <br/> See command description for more info. <br/> If specified command requires area (srcAreaId, destAreaId), that area must be APB enabled.  <br/> If specified command requires cardIDs, there must be at least one entry in the array and all specified card IDs must exist in database. <br/> If specified command requires that area (srcAreaId, destAreaId) is not specified, the field may be omitted or have null id value. <br/> If specified command requires that cardIDs must not be specified, the array may be omitted, null or empty. <br/> If specified command requires that cardTableId is not specified, the field may be omitted or null.'
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: |-
+            The following command are supported:
+            - 1: Move one or more cards to destination area. 
+            Must be specified: cardIDs, destAreaId. May be specified: cardTableId. Must not be specified: srcAreaId.
+            - 2: Move all cards from source area to destination area.
+            Must be specified: srcAreaId, destAreaId. Must not be specified: cardIDs, cardTableId.
+            - 3: Free one or more cards. 
+            Must be specified: cardIDs. May be specified: cardTableId. Must not be specified: srcAreaId, destAreaId.
+            - 4: Free all cards in source area.
+            Must be specified: srcAreaId. Must not be specified: cardIDs, cardTableId, destAreaId.
+            - 5: Free all cards
+            Must not be specified: cardIDs, cardTableId, srcAreaId, destAreaId.
+          example: 1
+        cardIDs:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+          minItems: 1
+          maxItems: 100
+        cardTableId:
+          type: integer
+          description: See desciption under apbStatus.cardTableId
+          default: 5001
+        srcAreaId:
+          $ref: '#/components/schemas/id'
+        destAreaId:
+          $ref: '#/components/schemas/id'
+    baseRecordFilter:
+      description: This is base type/class for record filter types. The properties are specified here in order to avoid repeating it in child types spec.
+      type: object
+      properties:
+        skipCount:
+          type: integer
+          description: Used for paging through data.
+          default: 0
+        limitCount:
+          type: integer
+          default: 100
+          minimum: 1
+          maximum: 1000
+        doNotFetchData:
+          type: boolean
+          description: 'If true, only record count will be returned and no data.'
+          default: false
+    crossId:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: id assigned by TechPoint.
+        extId:
+          type: string
+          description: 'This is external id, the id coming from the external system that is managing TechPoint.'
+      description: |-
+        This type is used to support saving external system id toghether with TechPoint generated id.
+
+        Regarding IDs, external system (API user) can behave in the following modes:
+        - Use its own ids, completely disregarding internal IDs used by TechPoint (for objects that support this type). In this case, when inserting records, extId would be specified.
+        - Let TechPoint assign the IDs, and use them, possibly making a mapping table between external system ids and TechPoint generated IDs. In this case, when inserting records, extId would not be specified. In this mode TechPoint will run faster.
+
+        **When used for filtering records, only one of two fields (id or extId) can be specified; if one is specified, the other one must be omitted or set to null.**
+
+        Note that internally, TechPoint will always use its own ids, e.g. in event log details the owner id will always be TechPoint generated id. When appropriate, this API will expose this type.
+    crossIdArray:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/crossId'
+      description: |-
+        Inside array they must not be mixed recordId types;
+        If id is used inside first entry, then it must be used for all.
+        If extId is used first entry, then it must be used for all.   
+    card:
+      type: object
+      required:
+        - cardHolderID
+        - id
+        - number
+      properties:
+        accessGroupLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/cardAccessGroupLink'
+        cardHolderID:
+          $ref: '#/components/schemas/crossId'
+        id:
+          $ref: '#/components/schemas/crossId'
+        isBlocked:
+          type: boolean
+          default: false
+        number:
+          type: string
+          example: '12345678'
+        pinCode:
+          type: string
+          example: '5762'
+        options:
+          type: array
+          description: |-
+            <strong> Please use GET /access/static/types to fetch all supported card options (from API v1.6.0). </strong>
+            <br/>
+            You may specify one or more options. To clear all options specify empty array. The supported options are as follows.
+            0 : Whitelist Card (Emergency card for wireless lock),
+            1 : Allow blocked doors (Can open door event if it is blocked),
+            2 : Overrule APB (Antipass back not respected),
+            3 : Trace card (Trace where card is used),
+            <del>4 : Intrusion rights (Allow intrusion action)</del>,
+            5 : Approver (Can approve two-man rule access),
+            6 : Firefighter card (Firefighter card - unlimited access),
+            7 : Disabled person (Extended door timing),
+            <del>8 : Overrule intrusion set (Allow access if intrusion unset error/timeout)</del>,
+            9 : Allow keypad commands (Allow controlling permanently and blocking door from keypad),
+            10 : Use Secondary offline validity period (Uses secondary validity period),
+            11 : Global Offline card (Card can be used across multiple sites),
+            12 : Readout offline alarms (Fetch offline door alarms, e.g battery alarms)
+            13 : Include offline blacklisted cards (Including black listed cards /longer encoding time)
+          items:
+            type: integer
+    cardFilter:
+      type: object
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>         
+      properties:
+        id:
+          $ref: '#/components/schemas/crossId'
+        number:
+          type: string
+        accessGroupIDs:
+          $ref: '#/components/schemas/crossIdArray'
+        isBlocked:
+          type: boolean
+    cardAccessGroupLink:
+      type: object
+      required:
+        - accessGroupID
+      properties:
+        accessGroupID:
+          $ref: '#/components/schemas/crossId'
+        validFrom:
+          type: string
+          format: date-time
+          description: Supported from v0.9.0
+        validTo:
+          type: string
+          format: date-time
+          description: Supported from v0.9.0
+    cardAccess:
+      type: object
+      required:
+        - cardIDs
+      properties:
+        cardIDs:
+          $ref: '#/components/schemas/crossIdArray'
+        accessGroupLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/cardAccessGroupLink'
+        isBlocked:
+          type: boolean
+          default: false
+        options:
+          type: array
+          description: See options field description under card type
+          items:
+            type: integer
+    cardHolder:
+      type: object
+      required:
+        - firstName
+        - id
+        - lastName
+      properties:
+        cardIDs:
+          $ref: '#/components/schemas/crossIdArray'
+        firstName:
+          type: string
+          example: Joe
+        id:
+          $ref: '#/components/schemas/crossId'
+        info:
+          type: string
+        lastName:
+          type: string
+          example: Smith
+        middleName:
+          type: string
+          example: J.
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type: string
+          format: date-time
+        company:
+          type: string
+          example: Joe Company Inc.
+    cardHolderFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>       
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/crossId'
+        accessGroupIDs:
+          $ref: '#/components/schemas/crossIdArray'
+        cardIds:
+          $ref: '#/components/schemas/crossIdArray'
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type: string
+          format: date-time
+    domain:
+      type: object
+      required:
+        - id
+        - name
+        - isSystem
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+          example: Default
+        info:
+          type: string
+        isSystem:
+          type: boolean
+      description: 'Default system domain has fixed id 1 '
+    door:
+      type: object
+      required:
+        - elevatorLink
+        - id
+        - instanceNumber
+        - name
+        - techPointLink
+        - type
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+          description: Nullable
+        type:
+          type: integer
+          description: |-
+            1: Door I/O 1,
+            2: Door I/O 2,
+            3: Door I/O Custom,
+            100: Aperio Offline,
+            101: Smart-Intego VCN
+        instanceNumber:
+          type: integer
+          description: Nullable
+        techPointLink:
+          $ref: '#/components/schemas/id'
+        elevatorLink:
+          $ref: '#/components/schemas/id'
+        accessRights:
+          type: array
+          items:
+            $ref: '#/components/schemas/accessRight'
+          description: This field is read only and included only if indicated by door filter
+    doorFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>   
+      type: object
+      properties:
+        ids:
+          $ref: '#/components/schemas/idArray'
+        techPointIDs:
+          $ref: '#/components/schemas/idArray'
+        includeAccessRights:
+          type: boolean
+          description: 'If true, access rights will be included in result.'
+          default: false
+    doorStatus:
+      type: object
+      required:
+        - exception
+        - id
+        - intrusionState
+        - position
+        - positionCause
+        - issabotage
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        position:
+          type: integer
+          description: |-
+            0 : Unknown,
+            1 : Secured,
+            2 : Unsecure,
+            3 : Released,
+            4 : Open
+        positionCause:
+          type: integer
+          description: |-
+            0 : NoCause,
+            1 : ReleasedWithCard,
+            2 : ReleasedWithExitPush,
+            3 : ReleasedWithRemotely,
+            4 : ReleasedWithWeekProgram,
+            5 : ReleasedWithFunction,
+            6 : BlockedByMngt,
+            7 : BlockedByWeekProgram,
+            8 : BlockedByFunction
+        exception:
+          type: integer
+          description: |-
+            0 : DoorExceptionNone (command was successful),
+            1 : DoorExceptionBlocked,
+            2 : DoorExceptionPermReleased,
+            3 : DoorExceptionWarning,
+            4 : DoorExceptionHeld,
+            5 : DoorExceptionForced,
+            6 : DoorExceptionOffline
+        intrusionState:
+          type: integer
+          description: |-
+            0 : NoDoorIntrusion,
+            1 : DoorIntrusionSet,
+            2 : DoorIntrusionUnset
+        issabotage:
+          type: boolean
+
+    doorCommand:
+      type: object
+      required:
+        - doorIDs
+        - newDoorState
+      properties:
+        doorIDs:
+          $ref: '#/components/schemas/idArray'
+        newDoorState:
+          type: integer
+          description: |-
+            0 : Normal,
+            1 : Close,
+            2 : Open,
+            3 : Block,
+            4 : PermOpen   
+    envDevice:
+      type: object
+      required:
+        - id
+        - name
+        - info
+        - proxyHandle
+        - isEnabled
+        - isHttpSupported
+        - allowWebProxy
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+          example: Default
+        info:
+          type: string
+          description: 'Nullable. Longer, additional details.'
+        proxyHandle:
+          type: string
+          description: URL friednly name that will be used to target/refer to this device when making proxy calls.
+        isEnabled:
+          type: boolean
+          description: 'True if device is globally enabled for any funcionality including proxy. If False, proxy call to it will be rejected.'
+          default: true
+        isHttpSupported:
+          type: boolean
+          description: 'True if device supports http protocol. If False,  proxy call to it will be rejected.'
+          default: true
+        allowWebProxy:
+          type: boolean
+          description: 'True if device is allowed to be proxy target. If False,  proxy call to it will be rejected.'
+          default: true
+        baseURL:
+          type: string
+          description: Device base URL to which URL specified in a proxy call will be appended
+    error:
+      type: object
+      required:
+        - code
+        - msg
+        - msgDetails
+      properties:
+        code:
+          type: integer
+          description: |-
+            0 means no error. 
+            1 is general error with no specific code.
+            Actual error code values will be supplied to API user.
+        msg:
+          type: string
+          description: Nullable. Human readable error description (english).
+        msgDetails:
+          type: string
+          description: 'Nullable. Longer, additional details.'
+    errorResult:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+    errorRecordNotFound:
+      type: object
+      required:
+        - error
+        - record
+      properties:
+        error:
+          $ref: '#/components/schemas/error'
+        record:
+          $ref: '#/components/schemas/tableCrossRecord'
+      description: Used to specify details about which resource is not found.
+    errorResultRecordsNotFound:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/errorRecordNotFound'
+    event:
+      type: object
+      required:
+        - clearTime
+        - clearedBy
+        - details
+        - eventTime
+        - id
+        - techPointId
+        - type
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        type:
+          type: integer
+        techPointId:
+          $ref: '#/components/schemas/id'
+        eventTime:
+          type: string
+          format: date-time
+          description: Nullable.
+        clearTime:
+          type: string
+          format: date-time
+          description: Nullable.
+        clearedBy:
+          $ref: '#/components/schemas/id'
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/eventDetails'
+    eventDetails:
+      type: object
+      required:
+        - id
+        - relatedRecord
+        - type
+        - value
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        type:
+          type: integer
+        value:
+          type: string
+          description: 'Nullable. E.g. could be card number, card holder name, reader name etc.'
+        relatedRecord:
+          $ref: '#/components/schemas/tableCrossRecord'
+    eventFilter:
+      type: object
+      description: |
+        <strong>This type inherits all fields from baseRecordFilter</strong> <br/> If id is specified, all other fields are discarded. 
+        skipCount can be used to page through records. 
+        All fields are optional and if are specified and not null, the filter is applied by making sure all parameters are respected with one exception: if event matches eventTypes but does not match eventDetailsTypes it will be still included (all event details for that event will be returned).
+        Event types, event details types, and event type tags id values will be supplied to API customer.
+        To get total event count, you may pass eventFilter with only single field, where doNotFetchData is set to true.            
+      properties:
+        eventTypes:
+          type: array
+          items:
+            type: integer
+        greaterThenEventID:
+          $ref: '#/components/schemas/id'
+        lowerThenEventID:
+          $ref: '#/components/schemas/id'
+        greaterThenEventTime:
+          type: string
+          format: date-time
+        lowerThenEventTime:
+          type: string
+          format: date-time
+        id:
+          $ref: '#/components/schemas/id'
+        clearedType:
+          type: integer
+          default: null
+          minimum: 1
+          maximum: 3
+          description: |-
+            The following options are supported:
+            - 1: Only cleared events will be returned.
+            - 2: Only uncleared clearable events (alarms/alerts)  will be returned. Auto clearable uncleared events will be excluded. i.e., only events that can be cleared by end user and are not yet cleared will be returned.
+            - 3: Only uncleared clearable AND uncleared auto clearable events (alarms/alerts) will be returned.
+          example: 2
+        eventTypeTags:
+          type: array
+          items:
+            type: integer
+        techPoints:
+          $ref: '#/components/schemas/idArray'
+    eventFilterResult:
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        records:
+          type: array
+          description: It will be null if there is no data or doNotFetchData is set to true.
+          items:
+            $ref: '#/components/schemas/event'
+        count:
+          type: integer
+          description: 'Total count matching query criteria, skipCount and limitCount parameters are discarded. This is not the count of records array.'
+    eventClearCommand:
+      type: object
+      description: 'If doClearAll is set to true then eventIDs must be null, omitted or have 0 entries. If eventIDs has one or more entries, doClearAll must be null, omitted or set to false. Maximum ids in eventIDs is 100.'
+      properties:
+        doClearAll:
+          type: boolean
+          description: 'If true, all alarms will be cleared.'
+          default: false
+        eventIDs:
+          $ref: '#/components/schemas/idArray'
+    eventClearResult:
+      type: object
+      required:
+        - clearedCount
+        - requestedCount
+      description: Result of event clear command.
+      properties:
+        clearedCount:
+          type: integer
+          description: Number of events that have been cleared.
+        requestedCount:
+          type: integer
+          description: Number of event IDs requested to be cleared. Null in case clear all was executed.
+    eventTypesStaticConfig:
+      type: object
+      description: Event types/tags static information.
+      required:
+        - deviceVersion
+        - eventTypes
+        - eventTags
+      properties:
+        deviceVersion:
+          $ref: '#/components/schemas/version'
+        eventTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/eventTypeStaticInfo'
+        eventTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/eventTagStaticInfo'
+    eventTypeStaticInfo:
+      type: object
+      required:
+        - id
+        - name
+        - isAutoCleared
+      description: Event type static information.
+      properties:
+        id:
+          type: integer
+          description: Event type id.
+        name:
+          type: string
+          description: Event type name.
+        isAutoCleared:
+          type: boolean
+          description: 'True in case event type can only be cleared by system itself (after the issue has been resolved). False in case event type can be cleared only by end user. Null in case event type is not clearable at all, i.e. there is no linked event tag with isClearable set to true for this event type.'
+    eventTagStaticInfo:
+      type: object
+      required:
+        - id
+        - name
+        - isClearable
+        - parentId
+        - linkedEventTypeIDs
+        - children
+      description: Event tag static information. It is organized as tree structure.
+      properties:
+        id:
+          type: integer
+          description: Event tag id.
+        name:
+          type: string
+          description: Event tag name.
+        isClearable:
+          type: boolean
+          description: 'True in case event type to which this tag is applied can be cleared (typically alarms/alerts). If you want to clear linked event type, even when this property is true, you neeed to make sure that event type isAutoCleared is false, otherwise you will not be able to clear the event.'
+        parentId:
+          type: integer
+          description: Parent event tag id. Null in case of top level tag.
+        linkedEventTypeIDs:
+          type: array
+          description: Event type id-s that this tag applies to. Null in case no linked event types.
+          items:
+            type: integer
+        children:
+          type: array
+          description: Child event tags (eventTagStaticInfo). Null in case no children.
+          items:
+            $ref: '#/components/schemas/eventTagStaticInfo'
+    eventWebHook:
+      type: object
+      required:
+        - eventFilter
+        - url
+      properties:
+        url:
+          type: string
+          description: 'Webhook URL for push event notifications. If empty or null, webhook is considered disabled.'
+        eventFilter:
+          $ref: '#/components/schemas/eventFilter'
+        userName:
+          type: string
+        password:
+          type: string
+        authType:
+          type: string
+          default: None
+          enum:
+            - 'None, Basic'
+      description: |-
+        TechPoint will make a POST  to URL that will contain JSON object of type **eventFilterResult**  whenever specified event filter is triggered.
+        We recommend that URL is HTTPS but it is not required.
+        Authentication will be used as specified in authType.
+        if authType is None, no authentication will be performed.
+        if authType is Basic or Digest, then userName must be specified.
+        If API user needs some other type of authentication, it can be added.
+    generalTypesStaticConfig:
+      type: object
+      description: Static types used in the system. Tables is array of internal tables. It could be useful for better understaning of e.g. event log details where table id is used (tableRecord). "System_" and "Static_" tables are excluded.
+      required:
+        - deviceVersion
+        - tables
+      properties:
+        deviceVersion:
+          $ref: '#/components/schemas/version'
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/tableStaticInfo'
+    holidayPeriod:
+      type: object
+      required:
+        - assumedWeekDay
+        - startMonth
+        - startDay
+        - endMonth
+        - endDay
+      properties:
+        assumedWeekDay:
+          type: integer
+          description: Specifies which week program day should be applied when holiday is in effect. Allowed values are those that are allowed for week program day.
+        startYear:
+          type: integer
+          minimum: 2000
+          maximum: 3000
+        startMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+        startDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        endYear:
+          type: integer
+          minimum: 2000
+          maximum: 3000
+        endMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+        endDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+    holiday:
+      type: object
+      required:
+        - id
+        - isRepeated
+      properties:
+        id:
+          $ref: '#/components/schemas/crossId'
+        name:
+          type: string
+          description: Nullable
+        isRepeated:
+          type: boolean
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/holidayPeriod'
+    id:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: integer
+          description: Nullable in some cases. Assigned by TechPoint.
+      description: |-
+        TechPoint internal id.
+        The reason for using Object instead of plain integer is future extensibility.
+    idMap:
+      type: object
+      required:
+        - recordIDs
+      properties:
+        recordIDs:
+          type: array
+          items:
+            $ref: '#/components/schemas/tableCrossRecord'
+      description: Map of record id <-> external id.
+    idArray:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+    intrusionProfile:
+      description: 'Every intrusion action must be executed under intrusion profile that specifies which actions are allowed on which objects and when (controlled by a week program). The intrusion profile can be assigned to Web/API user account, card holder, card.'
+      type: object
+      required:
+        - id
+        - name
+        - isSystem
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+        info:
+          type: string
+          description: Nullable
+        isSystem:
+          type: boolean
+          description: Set to true in case of system built-in profile.
+          default: false
+    intrusionContainer:
+      type: object
+      description: 'Intrusion container is flexible type and may represent multiple types; Zone, Wired zone, Area or Area group. Area group contains Areas. Area may contain apbConfig (null if APB is disabled), Zones and Wired zone. Every intrusion container has its linked IO object ("ioId" is its ID). This is important because "ioId" is used when using management command e.g., set/unset Area and filtering. Every intrusion container object also has its ioType ("ioType", the type of "ioId"). Field "childrenIoIDs" may be present only in case of Area and Area group and it contains all intrusion child IO object IDs (IO objects linked to Zones, Wired zones or Areas that are the children). "apbConfig", "zones" and "wiredZones" fields are present only for Area. "areas" are only present for Area group.'
+      required:
+        - id
+        - name
+        - ioId
+        - ioType
+      properties:
+        id:
+          $ref: '#/components/schemas/tableRecord'
+        name:
+          type: string
+          description: Nullable
+        ioId:
+          $ref: '#/components/schemas/id'
+        ioType:
+          type: integer
+          description: |-
+            - 16: Zone,
+            - 17: Area,
+            - 18: Wired zone,
+            - 19: Area group
+        childrenIoIDs:
+          $ref: '#/components/schemas/idArray'
+        type:
+          type: integer
+          description: |-
+            Only available in case of Zones and Wired zones:  
+            - 0: Not configured,
+            - 1: Intrusion,
+            - 2: Technical,
+            - 3: Soft sabotage
+            - 4: Holdup
+            - 5: Fire
+            - 6: Duress
+            - 7: Mains fault
+        apbConfig:
+          $ref: '#/components/schemas/apbConfig'
+        zones:
+          type: array
+          description: This is present only for Areas (when ioType is 17). It is array of intrusionContainer objects.
+          items:
+            $ref: '#/components/schemas/intrusionContainer'
+        wiredZones:
+          type: array
+          description: This is present only for Areas (when ioType is 17). It is array of intrusionContainer objects.
+          items:
+            $ref: '#/components/schemas/intrusionContainer'
+        areas:
+          type: array
+          description: This is present only for Area groups (when ioType is 19). It is array of intrusionContainer objects.
+          items:
+            $ref: '#/components/schemas/intrusionContainer'
+    intrusionFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>      
+      type: object
+      required:
+        - ioType
+      properties:
+        ioType:
+          type: integer
+          default: null
+          minimum: 16
+          maximum: 19
+          description: |-
+            *The following types are used in intrusion*
+            - 16: Zone,
+            - 17: Area,
+            - 18: Wired zone,
+            - 19: Area group
+          example: 16
+        depthLevel:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 2
+          description: 'Depth level 0 (default) indicates that no child objects should be fetched which is always the case for Zones and Wired zones. In case of Areas, depth level of 1 will fetch its child Zones and Wired zones whereas depth level of 0 will only fetch Areas. Depth level 2 can be only used for Area groups in which case its child Areas including Zones and Wired zones in those Areas will be fetched.'
+        includeStatusText:
+          type: boolean
+          default: false
+          description: 'This field is only used when fetching intrusion status. When set to true, intrusionStatusResult will include human readable status text fields. '
+        ids:
+          $ref: '#/components/schemas/idArray'
+        techPointIDs:
+          $ref: '#/components/schemas/idArray'
+    intrusionFilterResult:
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        count:
+          type: integer
+          description: Total count matching query criteria. This is not the count of records array.
+        records:
+          type: array
+          description: It will be null if there is no data or doNotFetchData is set to true.
+          items:
+            $ref: '#/components/schemas/intrusionContainer'
+    intrusionStatus:
+      description: '"id" field is ID of Zone, Wired zone, Area or Area group. If this this is response to intrusion status request, be sure to set intrusionFilter.includeStatusText to true if you want status text to be included in the result.'
+      type: object
+      required:
+        - id
+        - ioId
+        - ioType
+        - state
+        - stateFlags
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        ioId:
+          $ref: '#/components/schemas/id'
+        ioType:
+          type: integer
+          description: See intrusionContainer.ioType for details.
+          example: 16
+        state:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 6
+          description: |-
+            The following types are used in intrusion:
+            - 0: Unassigned,
+            - 1: Unset,
+            - 2: Set,
+            - 3: Partial set,
+            - 4: Disabled,
+            - 5: Isolated
+            - 6: NotConfigured
+          example: 1
+        stateFlags:
+          type: array
+          items:
+            type: integer
+          description: |-
+            The array may be empty. Some of the values below are not applicable to intrusion state (they are part of general IO state flags). Each value is zero based index of a bit in the integer (the actual value used by the system is index to the power of 2, e.g. if value is 7 than system used internal value is 7 to the power of 2 = 128). The values represent:
+            - 0: Active [N/A, Not in use],
+            - 1: Stimulated,
+            - 2: Alarm,
+            - 3: Sabotage (open),
+            - 4: Sabotage (shorted),
+            - 5: Sabotage (comlost),
+            - 6: Sabotage (TechPoint lost),
+            - 7: Unset,
+            - 8: Set,
+            - 9: Nigth set,
+            - 10: Partial set,
+            - 11: Entry timer running,
+            - 12: Exit timer running,
+            - 13: Isolated,
+            - 14: Disabled,
+            - 15: Prewarning (autoset),
+            - 16: Hidden alarm,
+            - 17: External alarm latch,
+            - 18: External sabotage latch,
+            - 19: Local alarm latch,
+            - 20: Local sabotage latch,
+            - 21: Not operational,
+            - 22: Service mode allowed,
+            - 23: In service mode,
+            - 24: Not configured,
+            - 25: Local latch test failed,
+            - 26: External latch test failed,
+            - 27: Test active,
+            - 28: Set fault. Unable to set area. Reset when set success or accept alarm,
+            - 29: AutoSet week program is suppressed,
+            - 30: Delay prewarning after unset,
+            - 31: Area empty,
+            - 32: Area limitation reached.
+          example:
+            - 7
+            - 22
+        stateFlagsText:
+          type: array
+          items:
+            type: string
+          description: Human readable text representation of stateFlags array.
+          example:
+            - Unset
+            - Service mode allowed
+        stateText:
+          type: string
+          description: 'Human readable text. First part represents the state name, e.g. "Unset" (if state can''t be determined the text will be "???"). Second part of the string, if present, will be separated from first with slash (/) and additional info, e.g. "Unset/In Service".'
+          example: Unset/In Service
+        stateAttentionText:
+          type: string
+          description: 'Additional human readable text with important informaton. In case of state Unset/Set/Partial set this could be "Sabotage", "Active", "Passive", "Test failed", "Test active" and if multiple of these are in effect they are separated with slash (/). In case of state Isolated these could be "Active" or "Passive".'
+          example: Sabotage
+    intrusionStatusResult:
+      description: The result of requested intrusion status.
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        count:
+          type: integer
+          description: Total count matching query criteria. This is not the count of records array.
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/intrusionStatus'
+    intrusionCommand:
+      description: 'Execute specified intrusion command on one or more objects. The objects (zones, wired zones, areas and area groups) are identified by their ioId which must be provided inside "ioIDs" array. Typically, "intrusionProfileID" field should be omitted (or set to null) in which case intrusion profile that is linked to the API user account will be used (this can be specified on user editor on "Intrusion profile" tab). <strong>Important: "intrusionProfileID" may be specified only if API user account is system administrator.</strong>'
+      type: object
+      required:
+        - command
+        - ioIDs
+      properties:
+        command:
+          type: integer
+          minimum: 2
+          maximum: 17
+          description: |-
+            The following command are supported:
+            - 2: Unset,
+            - 3: Set,
+            - 4: Force set,
+            - 5: Disable (supported only for Zones)
+            - 6: Enable (supported only for Zones)
+            - 7: Isolate (supported only for Zones)
+            - 8: Accept alarm,
+            - 9: Clear alarm only,
+            - 10: Clear all, sabotage and alarm
+            - 11: Postpone Autoset
+            - 14: Allow service
+            - 15: Disallow service
+            - 16: Set in service
+            - 17: Set out of service
+          example: 2
+        ioIDs:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+          minItems: 1
+          maxItems: 10
+        intrusionProfileID:
+          $ref: '#/components/schemas/id'
+    keybox:
+      type: object
+      description: Keybox is used as a locker box or safety deposit box which can be controlled in a similar manner like an elevator matrix for a door. Every keybox has a number and belongs to keybox group. Keybox group must be linked to a door in order for keybox to be used. Keybox can be opened using management API.
+      required:
+        - id
+        - number
+        - name
+        - info
+        - groupId
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        number:
+          type: integer
+          description: Keybox number
+        name:
+          type: string
+        info:
+          type: string
+          description: Nullable
+        groupId:
+          $ref: '#/components/schemas/id'
+    keyboxGroup:
+      type: object
+      description: 'Keybox group is keybox container. It is linked to a door. If not linked to a door (door is null), keyboxes inside can''t be used for management commands. techPointId is derived from door. keyboxes array contains all keyboxes that belong to the group.'
+      required:
+        - id
+        - name
+        - info
+        - doorId
+        - techPointId
+        - keyboxes
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+        info:
+          type: string
+          description: Nullable
+        doorId:
+          $ref: '#/components/schemas/id'
+        techPointId:
+          $ref: '#/components/schemas/id'
+        keyboxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/keybox'
+    keyboxGroupFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>   
+      type: object
+      properties:
+        ids:
+          $ref: '#/components/schemas/idArray'
+        doorIDs:
+          $ref: '#/components/schemas/idArray'
+    keyboxGroupFilterResult:
+      description: The result of requested keybox group config.
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        count:
+          type: integer
+          description: Total count matching query criteria. This is not the count of records array.
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/keyboxGroup'
+    keyboxCommand:
+      description: Execute keybox command (open) on one or more keyboxes. The command will fail if keybox's group is not linked to any door or the API user does not have write access to a linked door.
+      type: object
+      required:
+        - command
+        - keyboxIDs
+      properties:
+        command:
+          type: integer
+          minimum: 1
+          maximum: 1
+          description: |-
+            The following commands are supported:
+            - 1: Open
+          example: 1
+        keyboxIDs:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+          minItems: 1
+          maxItems: 100
+    proxyRequest:
+      type: object
+      required:
+        - webMethod
+        - isBodyEncoded
+        - encodeResponseBody
+      properties:
+        webMethod:
+          type: string
+          example: POST
+          description: 'Supported values are: GET, POST, PUT, DELETE, PATCH. Value is not case sensitive.'
+        isBodyEncoded:
+          type: boolean
+          description: 'If true, then body field is base64 encoded, otherwise it is JSON.'
+          default: false
+        body:
+          type: object
+          description: 'Nullable. If isBodyEncoded is true, then the field is string base64 encoded, otherwise it is JSON object.'
+        ignoreConfigHttpHeaders:
+          type: boolean
+          description: 'If true, then configured http headers for proxy target (env. device) will be discarded.'
+          default: false
+        httpHeaders:
+          type: array
+          items:
+            $ref: '#/components/schemas/nameValue'
+          description: Nullable. Array of http headers.
+        encodeResponseBody:
+          type: boolean
+          description: 'If true, then the field in proxy response will be  base64 encoded, otherwise it will be JSON.'
+          default: false
+    proxyResponse:
+      type: object
+      required:
+        - isBodyEncoded
+        - body
+      properties:
+        isBodyEncoded:
+          type: boolean
+          description: 'If true, then body field is base64 encoded, otherwise it is JSON.'
+          default: false
+        body:
+          type: object
+          description: Nullable. Depending on isBodyEncoded the field can be string base64 encoded or JSON object.
+    nameValue:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          example: Content-Type
+        value:
+          type: string
+          example: application/json
+    reader:
+      type: object
+      required:
+        - id
+        - instanceNumber
+        - name
+        - techPointLink
+        - type
+        - commChannel
+        - protocolType
+        - linkedDoorIDs
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+          description: Nullable
+        type:
+          type: integer
+          description: |-
+            Reader type:
+            1: Standard,
+            2: Multi door (can be linked to multiple doors)
+        instanceNumber:
+          type: integer
+          description: Nullable
+        techPointLink:
+          $ref: '#/components/schemas/id'
+        commChannel:
+          type: integer
+          description: |-
+            Reader communication channel:
+            0 : None,
+            1 : RS485 A,
+            2 : RS485 B,
+            3 : TCP-IP.      
+        protocolType:
+          type: integer
+          description: |-
+            Reader protocol type:
+            0 : None,
+            1 : Deister deBUS,
+            2 : Aperio,
+            3 : OSDP,
+            4 : N/A (type no longer in use),
+            5 : Serial bar code Reader,
+            6 : Smart Intego (IP),
+            7 : Wiegand,
+            8 : Siedle Vario.
+        linkedDoorIDs:
+          type: array
+          items:
+            $ref: '#/components/schemas/idArray'
+          description: Door IDs of doors linked to the reader
+    readerFilter:
+      description: |-
+        <strong>This type inherits all fields from baseRecordFilter</strong>
+        <br/>   
+      type: object
+      properties:
+        ids:
+          $ref: '#/components/schemas/idArray'
+        techPointIDs:
+          $ref: '#/components/schemas/idArray'
+    readerFilterResult:
+      description: The result of requested reader config.
+      type: object
+      required:
+        - count
+        - records
+      properties:
+        count:
+          type: integer
+          description: Total count matching query criteria. This is not the count of records array.
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/reader'
+    simulateCardRead:
+      type: object
+      description: 'Door id must be specified. If reader id is not specified, first door''s configured reader will be automatically selected and used. Access card can be identified by card number or chip id. Only one of the field that identify a card can be specified (card number or chip id).'
+      required:
+        - doorID
+      properties:
+        doorID:
+          $ref: '#/components/schemas/id'
+        readerID:
+          $ref: '#/components/schemas/id'
+        cardNumber:
+          type: string
+          example: '12345678'
+        chipNumber:
+          type: integer
+          description: Unsigned integer.
+        chipNumberBitLength:
+          type: integer
+          description: Number of bits to take from chipNumber (if field is specified).
+          minimum: 1
+          maximum: 56
+    tableRecord:
+      type: object
+      required:
+        - id
+        - tableId
+      properties:
+        tableId:
+          type: integer
+          description: |-
+            Each table in TechPoint has Id.
+            Most common ones:
+             1000 : Week programs,
+             1002 : Holidays,
+             5000 : Card holders,
+             5001 : Cards,
+             5002 : Access groups
+        id:
+          $ref: '#/components/schemas/id'
+        techPointId:
+          $ref: '#/components/schemas/id'
+    tableStaticInfo:
+      description: Information about system internal SQL table
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: table static id (referenced in e.g. event log details)
+          example: 5001
+        name:
+          type: string
+          example: '[Access_Cards]'
+    tableCrosstableidRecord:
+      type: object
+      required:
+        - id
+        - tableId
+      properties:
+        tableId:
+          type: integer
+          description: 
+          example: 5001
+        id:
+          $ref: '#/components/schemas/crossId'
+    tableCrossRecord:
+      type: object
+      required:
+        - id
+        - tableId
+      properties:
+        tableId:
+          type: integer
+          description: Each table in TechPoint has Id. See tableRecord record for list of table ids.
+        id:
+          $ref: '#/components/schemas/crossId'
+        techPointId:
+          $ref: '#/components/schemas/id'
+      description: TechPoint database full record cross id.
+    techPoint:
+      type: object
+      required:
+        - id
+        - ipAddress
+        - isMaster
+        - macAddress
+        - name
+        - port
+        - variantName
+        - variantType
+        - version
+        - syncStatusText
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+        ipAddress:
+          type: string
+        port:
+          type: integer
+        macAddress:
+          type: string
+        isMaster:
+          type: boolean
+        variantName:
+          type: string
+        version:
+          $ref: '#/components/schemas/version'
+        variantType:
+          type: integer
+        syncStatusText:
+          type: string
+          example: Synchronized
+          description: 'Nullable. Sync status is only returned as not null if specifically requested and if the system is running in multi TechPoint mode. In case of Master, the status is always the same: "N/A". This status text is the same as the one you can see on TechPoint web sync page (under System/Administration/TechPoints), column "Synchronization status". For now, we don''t support integer status codes for sync.'
+    weekProgramPeriod:
+      type: object
+      required:
+        - dayNo
+        - startSecond
+        - function
+      properties:
+        dayNo:
+          type: integer
+          minimum: 0
+          maximum: 16
+          description: |-
+            0: Monday,
+            1: Tuesday,
+            2: Wednesday,
+            3: Thursday,
+            4: Friday,
+            5: Saturday,        
+            6: Sunday,
+            7: Special I,
+            8: Special II,
+            9: Special III,
+            10: Special IV,
+            11: Special V,  
+            12: Special VI,
+            13: Special VII,
+            14: Threat level 1,
+            15: Threat level 2,
+            16: Threat level 3
+        startSecond:
+          type: integer
+          minimum: 0
+          maximum: 86399
+          description: Start second at which function starts until next function is defined for the same day.
+        function:
+          type: integer
+          description: |
+            |Function | ID |  Week Pr. type |  
+            |---------------------|----|---|
+            |No Access |20| 10|
+            |Access with pincode |21| 10|
+            |Access without pincode |22| 10|
+            |Toggle with pincode |23| 10|
+            |Toggle without pincode |24| 10|
+            |Two man rule with pincode |27| 10|
+            |Two man rule without pincode |28| 10|
+            |Perm until closed with pincode |31| 10|
+            |Perm until closed without pincode |32| 10|
+            |Office mode without pincode |33| 10|
+            |Office mode with pincode |34| 10|
+    weekProgram:
+      type: object
+      description: 'Important: when you are inserting/updating wp periods, there should be week program period for each day with startSecond = 0, otherwise the entry will be automatically added (with default function).'
+      required:
+        - id
+        - type
+      properties:
+        id:
+          $ref: '#/components/schemas/crossId'
+        name:
+          type: string
+          description: Nullable
+        type:
+          type: integer
+          description: |-
+            *Currently, only type 10 is allowed.*
+            - 1: Door weekprogram,
+            - 10: Card holder weekprogram,
+            - 11: Output Control,
+            - 12: General purpose,
+            - 13: Auto set,
+            - 100: LogControl 
+        isSystem:
+          type: boolean
+          description: 'If specified by user, it must be set to false.'
+          default: false
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/weekProgramPeriod'
+    watchdogStatus:
+      type: object
+      description: Current watchdog status.
+      required:
+        - name
+        - isAllowed
+        - isActiveNow
+        - timeoutSec
+        - isRebootEnabled
+      properties:
+        name:
+          type: string
+          example: cloud_api
+          description: 'Watchdog name. When watchdog is activated from Web API over HTTP/S, the name is ''web_api''. When watchdog is activated from Cloud, the name is ''cloud_api''.'
+        isAllowed:
+          type: boolean
+          description: 'User configurable system settings. When true, watchdog API is enabled.'
+        isActiveNow:
+          type: boolean
+          description: Set to true when watchdog is up & running.
+        timeoutSec:
+          type: integer
+          description: Watchdog timeout in seconds.
+        isRebootEnabled:
+          type: boolean
+          description: Set to true when watchdog action is to reboot the system.
+        deactivateIfCloudUnreachable:
+          type: boolean
+          default: true
+          description: 'Only applicable to ''cloud_api'' watchdog. When true, watchdog will be auto deactivated around 10 seconds before timeout if IoT hub host is unreachable.'
+    watchdogCommand:
+      type: object
+      description: 'Command for watchdog. If the command is invoked over HTTP/S, the ''web_api'' watchdog will be affected. If command is invoked over Cloud, ''cloud_api'' watchdog will be affected.'
+      required:
+        - isActive
+        - timeoutSec
+      properties:
+        isActive:
+          type: boolean
+          description: 'When true, watchdog will be activated. When false, watchdog will be deactivated.'
+        timeoutSec:
+          type: integer
+          minimum: 60
+          maximum: 172800
+          description: Watchdog timeout in seconds.
+        isRebootEnabled:
+          type: boolean
+          default: false
+          description: Set to true  to reboot the system when watchdog times out. Set to false to only restart Web API/Cloud related processes.
+        deactivateIfCloudUnreachable:
+          type: boolean
+          default: true
+          description: 'Only applicable to ''cloud_api'' watchdog. When true (system default), watchdog will be auto deactivated near the end of timeout (sometime in last 10 seconds) if IoT hub host/port is unreachable. This is to prevent reboot when connection to cloud is not possible (e.g. internet connection not working). However, if cloud watchdog is active and about to timeout and this settings is true and system is not connected to the cloud (cloud status is disconnected) but cloud is reachable (its ip/port are reachable) this will still reboot the system (it will not deactivate the watchdog).'
+    version:
+      type: object
+      required:
+        - major
+        - minor
+        - revision
+      properties:
+        major:
+          type: integer
+        minor:
+          type: integer
+        revision:
+          type: integer
+    arErrorResponse:
+      type: object
+      required:
+        - code
+        - msg
+      properties:
+        code:
+          type: integer
+          description: |-
+            0 : Success,
+            1 : General error,
+            2 : Request timeout,
+            3 : Content missing,
+            4 : Destination not found,
+            5 : Response error,
+            6 : Needs capability report first,
+            7 : ??? (internal error),
+            8 : Cardless access is not enabled          
+        msg:
+          type: string
+    arEmptyResponse:
+      type: object
+    arPoll:
+      type: object
+      properties:
+        isSabotage:
+          type: boolean
+          default: false
+    arPollResponse:
+      type: object
+      required:
+        - hasNewConfig
+      properties:
+        hasNewConfig:
+          type: boolean
+          default: false
+    arReportCapability:
+      type: object
+      description: |-
+        Reports reader capability to the system. 
+        Whenever system detects reader is offline (e.g., due to missed polls), reader will have to send capability report before any other action can be performed.     
+      properties:
+        hasDisplay:
+          type: boolean
+          default: false
+        pollTimeSec:
+          type: integer
+          default: 90
+        inputCount:
+          type: integer
+          default: 0
+    arUserInputCard:
+      type: object
+      required:
+        - cardData
+      description: |-
+        Regular card read when user presents access card to a reader.
+        In case isRawData is set to True, then rawDataBitCount must be present and cardData must be string that can be converted to unsigned integer.
+      properties:
+        cardData:
+          type: string
+          default: ''
+        isRawData:
+          type: boolean
+          default: false
+        rawDataBitCount:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 56
+    arUserInputCardPin:
+      type: object
+      description: Card pin code. Typically sent following card read (pin code might be requested depending on access configuration).
+      required:
+        - pin
+      properties:
+        pin:
+          type: string
+    arUserInputCardless:
+      type: object
+      description: 'Used in case system is configured for cardless access (i.e. entering the pin/code is interpreted as card number instead of actual card read).   '
+      required:
+        - data
+      properties:
+        data:
+          type: string
+    arUserInputKeypad:
+      type: object
+      description: 'Input from reader keypad.      '
+      required:
+        - keys
+      properties:
+        keys:
+          type: string
+    arUserInputResponse:
+      type: object
+      description: 'This could be response to arUserInputCard, arUserInputCardPin, arUserInputCardless, or arUserInputKeypad.'
+      required:
+        - result
+        - expectedNextRequestType
+        - expectedNextRequestType_Text
+        - pincodeLength
+      properties:
+        result:
+          type: integer
+          default: 0
+          description: |-
+            User interaction result code, success/error:
+            0 : Success,
+            1 : Wrong pin code,
+            2 : Not found,
+            3 : Invalid site code,
+            4 : Read error,
+            5 : No keypad,
+            6 : Door blocked,
+            7 : Door not found,
+            8 : Intrusion set,
+            9 : Invalid approver,
+            10 : Access denied,
+            11 : Blocked card used,
+            12 : Out of time,
+            13 : APB violation,
+            14 : Toggle close,
+            15 : No pin code,
+            16 : Expired,
+            17 : Not valid yet,
+            18 : Door malfunction,
+            19 : Locker locked again,
+            20 : Only one locker allowed,
+            21 : Card used violation,
+            22 : Intrusion rights,
+            23 : Intrusion controller,
+            24 : Failed to unset,
+            25 : Failed to set,
+            26 : Pin code change not possible,
+            27 : AIR not possible,
+            28 : AIR authorizer,
+            29 : AIR error,
+            30 : AIR timeout,
+            31 : Encoding error,
+            32 : Not access approver (Card holder cannot approve access), 
+            33 : Offline system card (Special Offline system card. Does not open the door),
+            34 : Maximum use (Card have been used for specified max use),
+            35 : Door GUID missing (Simple Access integration misses DoorGuid),
+            36 : Pin code misused (Maximum Pin code attempts is reached),
+            37 : Postpone autoset failed,
+            38 : Timeout (Panel timeout),
+            39 : Intrusion now set, 
+            40 : Intrusion now unset, 
+            41 : Intrusion now postponed,
+            42 : Intrusion internal error,
+            43 : Enter new pin code disallowed,
+            44 : Change pin code disallowed,
+            45 : No Keybox access,
+            46 : Denied by threat level,
+            47 : Conv. already booked,
+            48 : Secure extension license violated,
+            49 : APB area full
+        expectedNextRequestType:
+          type: integer
+          default: 0
+          description: |-
+            Indicates next expected user interaction or error:
+            0 : No action (no further interaction is required),
+            1 : No access,
+            2 : Card not found,
+            3 : Out of time,
+            4 : Enter pin code,
+            5 : Change pin code,
+            6 : New pin code,
+            7 : Old pin code,
+            8 : Verify pin code,
+            9 : Invalid pin code,
+            10 : Two man rule,
+            11 : No Access. ? (Intrusion) is set,
+            12 : Intrusion is set (press ..), 
+            13 : Intrusion setting.., 
+            14 : Intrusion now set,
+            15 : Intrusion set failed,
+            16 : Intrusion unsetting.., 
+            17 : Intrusion unset failed,
+            18 : Postpone autoset,
+            19 : Autoset postponed,
+            20 : Postpone autoset failed,
+            21 : Air request (Please wait for verification),
+            22 : Card encoded,
+            23 : Panel blocked,
+            24 : Intrusion alarm,
+            25 : Intrusion sabotage,
+            26 : Intrusion test failed,
+            27 : Intrusion hidden alarm,
+            28 : Intrusion prewarning,
+            29 : Intrusion entry timer (please unset),
+            30 : Intrusion exit timer (please leave the area),
+            31 : Offline encoding card,
+            32 : APB violation
+        expectedNextRequestType_Text:
+          type: string
+          default: ''
+          description: User friendly text explaining next needed interaction (if any).
+        pincodeLength:
+          type: integer
+          default: 0
+          description: 'In case pin code is needed (e.g. after card read), this will specify its length.'
+    arInputState:
+      type: object
+      required:
+        - number
+        - isActive
+      properties:
+        number:
+          type: integer
+          description: |-
+            Input numbers start at 1.
+            If reader has reported 0 inputs, than it cannot be referred to inhere.
+            If reader has reported 2 inputs, then first input number is 1 and second is number 2.
+          minimum: 1
+        isActive:
+          type: boolean
+          description: Determines if input is to be set to Active (true) or passive (false).
+        durationMSec:
+          type: integer
+          default: 0
+          description: Duration of input stimulation in milliseconds.
+    arControlInput:
+      type: object
+      description: 'Interation (json type) ID: 12.       '
+      required:
+        - inputs
+      properties:
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/arInputState'

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-06-12
+
+### Fixed
+- Output toggle (switch turn_on/turn_off) still failing with 400 "RapidJson internal
+  assertion failed". Three bugs in the POST body for `set_io_userdefined` (now verified
+  against the official TechPoint Swagger v1.13.0 spec):
+  1. `ids` was a plain integer — must be an **array** of objects.
+  2. `id` inside each item must be a **string** (`"1"`), not an integer.
+  3. `status` was at the body root — must be **inside** each array item.
+  Correct body: `{"ids": [{"id": "<str>", "status": 0|2}]}`.
+
+### Changed
+- `list_doors`, `list_areas_status`, and `list_zones_status` now fetch config and status
+  concurrently with `asyncio.gather`, halving per-poll round-trip time for those endpoints.
+- Added official TechPoint API Swagger spec (`docs/swagger.yaml`) to the repository.
+
 ## [0.8.5] - 2026-05-05
 
 ### Fixed
