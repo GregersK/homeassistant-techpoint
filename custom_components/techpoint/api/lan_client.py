@@ -548,10 +548,10 @@ class LanApiClient(BaseApiClient):
     async def set_io_userdefined(self, output_id: int, status: int, io_type: int = 29) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
 
-        Per TechPoint OpenAPI spec v1.13.0 (userdefinedio request body):
-          ids: array of {id: string, status: integer}
-          status: 0=passive, 2=active
+        Swagger spec says id is string but RapidJson kInt64Flag assertion proves
+        the server reads id as integer. Send as int despite the spec.
+        status: 0=passive, 2=active
         """
-        body = {"ids": [{"id": str(output_id), "status": int(status)}]}
+        body = {"ids": [{"id": int(output_id), "status": int(status)}]}
         return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 
