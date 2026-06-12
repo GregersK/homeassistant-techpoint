@@ -548,10 +548,18 @@ class LanApiClient(BaseApiClient):
     async def set_io_userdefined(self, output_id: int, status: int, io_type: int = 29) -> Any:
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
 
-        Swagger spec says id is string but RapidJson kInt64Flag assertion proves
-        the server reads id as integer. Send as int despite the spec.
+        TechPoint firmware uses a strict body parser that requires ioFilter on all
+        requests to this endpoint (same as GET). Combine ioFilter with ids array.
         status: 0=passive, 2=active
         """
-        body = {"ids": [{"id": int(output_id), "status": int(status)}]}
-        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
+        body = {
+            "ioFilter": {"ioType": int(io_type)},
+            "ids": [{"id": int(output_id), "status": int(status)}],
+        }
+        return await self._request(
+            "POST",
+            PATH_IO_USERDEFINED,
+            params={"ioType": int(io_type)},
+            body=body,
+        )
 
