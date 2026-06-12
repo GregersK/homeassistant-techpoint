@@ -160,10 +160,11 @@ class LanApiClient(BaseApiClient):
         """Return doors with merged config (names) + status."""
         body = build_doors_status_body(False)
 
-        cfg = await self._request("POST", PATH_DOORS_CONFIG, body=body)
+        cfg, status_js = await asyncio.gather(
+            self._request("POST", PATH_DOORS_CONFIG, body=body),
+            self._request("POST", PATH_DOORS_STATUS_LIST, body=body),
+        )
         cfg_records = _records(cfg)
-
-        status_js = await self._request("POST", PATH_DOORS_STATUS_LIST, body=body)
         status_records = map_doors_status_response(status_js)
 
         status_by_id: dict[int, dict[str, Any]] = {
@@ -239,10 +240,11 @@ class LanApiClient(BaseApiClient):
     # ---------- Intrusion (AIA) ----------
     async def list_areas_status(self) -> List[Dict[str, Any]]:
         """Return intrusion areas with merged config (names) + status."""
-        cfg = await self._request("POST", PATH_INTRUSION_AREAS_CONFIG, body=build_intrusion_filter(17, False))
+        cfg, st_js = await asyncio.gather(
+            self._request("POST", PATH_INTRUSION_AREAS_CONFIG, body=build_intrusion_filter(17, False)),
+            self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(17, True)),
+        )
         cfg_records = _records(cfg)
-
-        st_js = await self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(17, True))
         st_records = map_intrusion_status_response(st_js)
 
         st_by_io: dict[int, dict[str, Any]] = {}
@@ -289,10 +291,11 @@ class LanApiClient(BaseApiClient):
 
     async def list_zones_status(self) -> List[Dict[str, Any]]:
         """Return intrusion zones with merged config (names) + status."""
-        cfg = await self._request("POST", PATH_INTRUSION_ZONES_CONFIG, body=build_intrusion_filter(16, False))
+        cfg, st_js = await asyncio.gather(
+            self._request("POST", PATH_INTRUSION_ZONES_CONFIG, body=build_intrusion_filter(16, False)),
+            self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(16, True)),
+        )
         cfg_records = _records(cfg)
-
-        st_js = await self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(16, True))
         st_records = map_intrusion_status_response(st_js)
 
         st_by_io: dict[int, dict[str, Any]] = {}
@@ -523,7 +526,6 @@ class LanApiClient(BaseApiClient):
             params={"ioType": int(io_type)},
             body={"ioFilter": {"ioType": int(io_type)}},
         )
-        _LOGGER.debug("TechPoint get_io_userdefined raw response: %s", js)
         out: List[Dict[str, Any]] = []
         for raw in _io_records(js):
             # Filter client-side too in case TP returns mixed types
@@ -547,14 +549,9 @@ class LanApiClient(BaseApiClient):
         """Set active/passive state for user-defined I/O (POST /config/io/userdefined).
 
         Per TechPoint OpenAPI spec v1.13.0 (userdefinedio request body):
-          ids: array of objects with id (string) and status (integer)
+          ids: array of {id: string, status: integer}
           status: 0=passive, 2=active
-
-        ioType query param mirrors the GET requirement (firmware parses it).
         """
-        body = {"ids": int(output_id), "status": int(status)}
-        _LOGGER.debug("TechPoint set_io_userdefined POST body: %s", body)
-        result = await self._request("POST", PATH_IO_USERDEFINED, body=body)
-        _LOGGER.debug("TechPoint set_io_userdefined response: %s", result)
-        return result
+        body = {"ids": [{"id": str(output_id), "status": int(status)}]}
+        return await self._request("POST", PATH_IO_USERDEFINED, body=body)
 
