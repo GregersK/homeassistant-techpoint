@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-06-20
+
+### Added
+- New service `generate_dashboard_yaml`: builds ready-made Lovelace cards from the
+  entities currently registered for an entry — one "entities" card per door (lock,
+  open/sabotage sensors, mode select, pulse button), plus grouped cards for outputs,
+  inputs, zones, and one alarm-panel card per intrusion area. Returns the YAML
+  (and the raw card list) so it can be pasted into a dashboard's raw YAML editor.
+- New service `cleanup_stale_entities`: removes entities for doors/zones/areas/IO
+  that no longer exist on the TechPoint controller (e.g. a door was deleted there),
+  then removes any devices left empty by that.
+- Automatic background cleanup: the integration now also runs this stale-entity
+  check itself after every successful poll, removing an entity only once its
+  underlying object has been confirmed missing for several consecutive polls (so
+  a single transient API failure can never cause an entity to be deleted).
+
 ## [0.9.1] - 2026-06-12
 
 ### Fixed

@@ -28,6 +28,11 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         # Keys that have failed at least once — skipped on subsequent polls
         # to avoid spamming the controller's error log. Reset on reload.
         self._disabled_keys: set[str] = set()
+        # Keys whose fetch succeeded on the most recent poll cycle. Used to gate
+        # stale-entity cleanup so a single transient API failure (which leaves
+        # that key's data empty for the cycle) can never be mistaken for a
+        # door/zone/output that was actually removed on the controller.
+        self.last_cycle_ok_keys: set[str] = set()
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch doors, AIA area/zone status, user-defined I/O, cardholder count, and controller state."""
@@ -75,6 +80,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 "io_inputs": [], "io_outputs": [], "cardholder_count": None,
                 "global_door_control_active": None, "threat_level": None,
             }
+            ok_keys: set[str] = set()
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
                     # First failure for this optional key: disable it for this session
@@ -89,6 +95,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                     else:
                         _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
                     continue
+                ok_keys.add(key)
                 if key == "cardholders_meta":
                     data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None
                 elif key == "global_door_control":
@@ -98,6 +105,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 else:
                     data[key] = val or data.get(key, [])
 
+            self.last_cycle_ok_keys = ok_keys
             return data
         except Exception as e:
             _LOGGER.warning("TechPoint update failed: %s", e)

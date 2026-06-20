@@ -166,6 +166,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Cleanup of legacy devices (old per-door/per-zone devices)
     hass.async_create_task(_async_cleanup_orphan_devices(hass, entry))
 
+    # Automatically remove entities for doors/zones/areas/IO that have been
+    # deleted on the TechPoint controller (after a few consecutive polls confirm
+    # they're really gone, not just a transient fetch failure), then drop any
+    # devices left empty by that removal.
+    def _on_coordinator_update() -> None:
+        from .services import _cleanup_orphan_devices_for_entry, _cleanup_stale_entities_for_entry
+
+        removed = _cleanup_stale_entities_for_entry(hass, entry.entry_id, require_consecutive_misses=True)
+        if removed:
+            _LOGGER.info("TechPoint: removed %s stale entit(y/ies) no longer present on controller", removed)
+            _cleanup_orphan_devices_for_entry(hass, entry.entry_id)
+
+    entry.async_on_unload(coordinator.async_add_listener(_on_coordinator_update))
+
     # Reload integration when options change (ensures webhook reconfigured)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 

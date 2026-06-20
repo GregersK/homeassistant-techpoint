@@ -2,28 +2,35 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable
 
+import yaml
+
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN
+from .util import find_by_id, normalize_id, parse_techpoint_unique_id, UID_KIND_TO_DATA_KEY
+
+
+def _resolve_entry_id(hass: HomeAssistant, entry_id: str | None) -> str:
+    dom = hass.data.get(DOMAIN) or {}
+    entry_ids = [k for k in dom if k != "_services_registered"]
+    if entry_id:
+        if entry_id not in dom:
+            raise ValueError(f"Unknown entry_id: {entry_id!r}")
+        return entry_id
+    if len(entry_ids) == 1:
+        return entry_ids[0]
+    if not entry_ids:
+        raise ValueError("No TechPoint integration found")
+    raise ValueError(
+        f"Multiple TechPoint entries found – please specify entry_id. Available: {entry_ids}"
+    )
 
 
 def _get_entry(hass: HomeAssistant, entry_id: str | None) -> Dict[str, Any]:
-    dom = hass.data.get(DOMAIN) or {}
-    entry_ids = [k for k in dom if k != "_services_registered"]
-    if not entry_id:
-        if len(entry_ids) == 1:
-            return dom[entry_ids[0]]
-        if not entry_ids:
-            raise ValueError("No TechPoint integration found")
-        raise ValueError(
-            f"Multiple TechPoint entries found – please specify entry_id. Available: {entry_ids}"
-        )
-    if entry_id not in dom:
-        raise ValueError(f"Unknown entry_id: {entry_id!r}")
-    return dom[entry_id]
+    return (hass.data.get(DOMAIN) or {})[_resolve_entry_id(hass, entry_id)]
 
 
 def _get_client(hass: HomeAssistant, entry_id: str | None):
@@ -66,6 +73,144 @@ def _cleanup_orphan_devices_for_entry(hass: HomeAssistant, entry_id: str) -> int
 
     return removed
 
+
+STALE_MISSING_THRESHOLD = 3
+
+
+def _valid_ids_for_key(snapshot: Dict[str, Any], data_key: str) -> set[str]:
+    """Return the set of current TechPoint object ids (as strings) for a data key."""
+    ids: set[str] = set()
+    for item in snapshot.get(data_key) or []:
+        rid = normalize_id((item or {}).get("id"))
+        if rid is not None:
+            ids.add(str(rid))
+    return ids
+
+
+def _stale_entity_ids_for_entry(
+    hass: HomeAssistant, entry_id: str, *, require_consecutive_misses: bool
+) -> list[str]:
+    """Return entity_ids whose underlying door/zone/area/IO no longer exists on the controller.
+
+    Only considers resource kinds whose most recent poll succeeded (coordinator.last_cycle_ok_keys),
+    so a single transient API failure can never be mistaken for a removed door/output. When
+    require_consecutive_misses is True (the automatic background pass), an entity must be reported
+    missing on STALE_MISSING_THRESHOLD consecutive checks before it's returned, to ride out brief
+    glitches. The manual service passes False to act immediately on the user's explicit request.
+    """
+    entry_data = (hass.data.get(DOMAIN) or {}).get(entry_id) or {}
+    coordinator = entry_data.get("coordinator")
+    if coordinator is None or not coordinator.last_update_success:
+        return []
+
+    snapshot = coordinator.data or {}
+    ok_keys = getattr(coordinator, "last_cycle_ok_keys", set())
+    ent_reg = er.async_get(hass)
+    missing_counts: dict[str, int] = entry_data.setdefault("_stale_missing_counts", {})
+
+    stale: list[str] = []
+    seen: set[str] = set()
+
+    for ent in er.async_entries_for_config_entry(ent_reg, entry_id):
+        if ent.platform != DOMAIN or not ent.unique_id:
+            continue
+        parsed = parse_techpoint_unique_id(entry_id, ent.unique_id)
+        if parsed is None:
+            continue
+        kind, obj_id, _sub = parsed
+        data_key = UID_KIND_TO_DATA_KEY[kind]
+        if data_key not in ok_keys:
+            # Last poll for this resource type failed/disabled — don't trust absence.
+            continue
+        if obj_id in _valid_ids_for_key(snapshot, data_key):
+            missing_counts.pop(ent.unique_id, None)
+            continue
+        seen.add(ent.unique_id)
+        count = missing_counts.get(ent.unique_id, 0) + 1
+        missing_counts[ent.unique_id] = count
+        if not require_consecutive_misses or count >= STALE_MISSING_THRESHOLD:
+            stale.append(ent.entity_id)
+
+    for uid in [u for u in missing_counts if u not in seen]:
+        missing_counts.pop(uid, None)
+
+    return stale
+
+
+def _cleanup_stale_entities_for_entry(
+    hass: HomeAssistant, entry_id: str, *, require_consecutive_misses: bool
+) -> int:
+    """Remove entities returned by _stale_entity_ids_for_entry. Returns count removed."""
+    stale_ids = _stale_entity_ids_for_entry(hass, entry_id, require_consecutive_misses=require_consecutive_misses)
+    if not stale_ids:
+        return 0
+    ent_reg = er.async_get(hass)
+    for entity_id in stale_ids:
+        ent_reg.async_remove(entity_id)
+    entry_data = (hass.data.get(DOMAIN) or {}).get(entry_id) or {}
+    entry_data.get("_stale_missing_counts", {}).clear()
+    return len(stale_ids)
+
+
+_DOOR_SUB_ORDER = ["lock", "open", "sabotage", "status", "mode", "pulse"]
+
+
+def _build_dashboard_view(hass: HomeAssistant, entry_id: str) -> Dict[str, Any]:
+    """Build a Lovelace view (dict) with ready-made cards for this entry's doors,
+    outputs, inputs, zones and areas, grouped from the current entity registry +
+    coordinator snapshot (for friendly door names)."""
+    entry_data = (hass.data.get(DOMAIN) or {})[entry_id]
+    coordinator = entry_data["coordinator"]
+    snapshot = coordinator.data or {}
+    ent_reg = er.async_get(hass)
+
+    doors: dict[str, dict[str, str]] = {}
+    outputs: list[str] = []
+    inputs: list[str] = []
+    zones: list[str] = []
+    areas: list[str] = []
+    controller: list[str] = []
+
+    for ent in er.async_entries_for_config_entry(ent_reg, entry_id):
+        if ent.platform != DOMAIN or not ent.unique_id or ent.disabled:
+            continue
+        parsed = parse_techpoint_unique_id(entry_id, ent.unique_id)
+        if parsed is None:
+            controller.append(ent.entity_id)
+            continue
+        kind, obj_id, sub = parsed
+        if kind == "door":
+            doors.setdefault(obj_id, {})[sub or ""] = ent.entity_id
+        elif kind == "io_output":
+            outputs.append(ent.entity_id)
+        elif kind == "io_input":
+            inputs.append(ent.entity_id)
+        elif kind == "zone":
+            zones.append(ent.entity_id)
+        elif kind == "area":
+            areas.append(ent.entity_id)
+
+    cards: list[dict[str, Any]] = []
+
+    for door_id, by_sub in sorted(doors.items(), key=lambda kv: int(kv[0])):
+        door_data = find_by_id(snapshot.get("doors"), int(door_id)) or {}
+        name = door_data.get("name") or f"Dør {door_id}"
+        entities = [by_sub[s] for s in _DOOR_SUB_ORDER if s in by_sub]
+        if entities:
+            cards.append({"type": "entities", "title": name, "entities": entities})
+
+    if outputs:
+        cards.append({"type": "entities", "title": "Udgange", "entities": sorted(outputs)})
+    if inputs:
+        cards.append({"type": "entities", "title": "Indgange", "entities": sorted(inputs)})
+    if zones:
+        cards.append({"type": "entities", "title": "Zoner", "entities": sorted(zones)})
+    for area_entity in sorted(areas):
+        cards.append({"type": "alarm-panel", "entity": area_entity, "states": ["arm_away", "arm_home"]})
+    if controller:
+        cards.append({"type": "entities", "title": "Controller", "entities": sorted(controller)})
+
+    return {"title": "TechPoint", "path": "techpoint", "cards": cards}
 
 
 def _int_id_local(v: Any):
@@ -199,6 +344,32 @@ async def async_register_services(hass: HomeAssistant) -> None:
             for eid in [k for k in (hass.data.get(DOMAIN) or {}).keys() if k != "_services_registered"]:
                 removed_total += _cleanup_orphan_devices_for_entry(hass, eid)
         return {"removed": removed_total}
+
+    async def cleanup_stale_entities(call: ServiceCall):
+        # Remove entities whose door/zone/area/IO no longer exists on the controller
+        # (e.g. a door was deleted in TechPoint), then drop any devices left empty by that.
+        entry_id = call.data.get("entry_id")
+        entry_ids = (
+            [entry_id]
+            if entry_id
+            else [k for k in (hass.data.get(DOMAIN) or {}).keys() if k != "_services_registered"]
+        )
+        removed_entities = 0
+        removed_devices = 0
+        for eid in entry_ids:
+            removed_entities += _cleanup_stale_entities_for_entry(hass, eid, require_consecutive_misses=False)
+            removed_devices += _cleanup_orphan_devices_for_entry(hass, eid)
+        return {"removed_entities": removed_entities, "removed_devices": removed_devices}
+
+    async def generate_dashboard_yaml(call: ServiceCall):
+        try:
+            entry_id = _resolve_entry_id(hass, call.data.get("entry_id"))
+            view = _build_dashboard_view(hass, entry_id)
+            yaml_text = yaml.safe_dump({"views": [view]}, sort_keys=False, allow_unicode=True)
+            _fire(hass, f"{DOMAIN}_generate_dashboard_yaml_result", {"entry_id": entry_id, "yaml": yaml_text})
+            return {"yaml": yaml_text, "view": view}
+        except Exception as e:
+            raise HomeAssistantError(str(e))
 
     # ---------- AIA ----------
     async def aia_update_zone(call: ServiceCall):
@@ -425,6 +596,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "door_set_status_by_entity", door_set_status_by_entity, supports_response=SupportsResponse.ONLY)
     hass.services.async_register(DOMAIN, "refresh", refresh, supports_response=SupportsResponse.ONLY)
     hass.services.async_register(DOMAIN, "cleanup_orphan_devices", cleanup_orphan_devices, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "cleanup_stale_entities", cleanup_stale_entities, supports_response=SupportsResponse.ONLY)
+    hass.services.async_register(DOMAIN, "generate_dashboard_yaml", generate_dashboard_yaml, supports_response=SupportsResponse.ONLY)
 
     hass.services.async_register(DOMAIN, "aia_update_zone", aia_update_zone, supports_response=SupportsResponse.ONLY)
     hass.services.async_register(DOMAIN, "aia_update_area", aia_update_area, supports_response=SupportsResponse.ONLY)
@@ -466,6 +639,8 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
         "door_set_status_by_entity",
         "refresh",
         "cleanup_orphan_devices",
+        "cleanup_stale_entities",
+        "generate_dashboard_yaml",
         "aia_update_zone",
         "aia_update_area",
         "access_get_groups",
