@@ -36,6 +36,47 @@ def make_device_context(hass: Any, entry_id: str, controller_name: str) -> Devic
     )
 
 
+def prefixed_item_name(item_name: Optional[str], item_id: Any, prefix: str) -> str:
+    """Return the item's own display label, e.g. "Dør Hjejlebakken" or "Zone 3"."""
+    name = (item_name or str(item_id)).strip()
+    if name and not name.lower().startswith(prefix.lower()):
+        name = f"{prefix} {name}"
+    return name
+
+
+def entity_name(
+    grouping: Optional[str],
+    item_name: Optional[str],
+    item_id: Any,
+    prefix: str,
+    suffix: Optional[str] = None,
+    *,
+    primary: bool = False,
+) -> Optional[str]:
+    """Compute an entity's `name` property for the current device grouping mode.
+
+    Under GROUP_BY_ITEM, each item already has its own device named via
+    prefixed_item_name (e.g. "Dør Hjejlebakken"); HA composes the displayed
+    friendly name as f"{device_name} {entity_name}", so repeating the item's
+    label in the entity name here would stutter ("Dør Hjejlebakken Dør
+    Hjejlebakken"). So the primary entity of such a device (its main
+    representation, e.g. the door's lock) returns None to use the bare device
+    name, and secondary entities (status sensor, mode select, ...) return just
+    their short suffix.
+
+    Under GROUP_BY_TYPE, many items share one device (e.g. "TP-LAN - Døre"), so
+    the entity name must carry the item's own label to disambiguate between them,
+    optionally with a suffix.
+    """
+    grouping = grouping or DEFAULT_DEVICE_GROUPING
+    if grouping == GROUP_BY_ITEM:
+        if primary and not suffix:
+            return None
+        return suffix
+    label = prefixed_item_name(item_name, item_id, prefix)
+    return f"{label} ({suffix})" if suffix else label
+
+
 def build_device_info(
     ctx: DeviceContext,
     grouping: Optional[str],
@@ -99,13 +140,9 @@ def build_device_info(
         # Reuse legacy identifier format from earlier versions so HA can reattach.
         identifier = f"{ctx.entry_id}_{singular}_{item_id}"
 
-        name = (item_name or str(item_id)).strip()
-        if name and not name.lower().startswith(item_prefix.lower()):
-            name = f"{item_prefix} {name}"
-
         return DeviceInfo(
             identifiers={(DOMAIN, identifier)},
-            name=name,
+            name=prefixed_item_name(item_name, item_id, item_prefix),
             manufacturer=ctx.manufacturer,
             model=model_item,
             via_device=(DOMAIN, ctx.entry_id),

@@ -10,7 +10,10 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import make_device_context, build_device_info
+from .device import make_device_context, build_device_info, entity_name
+
+# Serialize writes against the controller instead of firing them concurrently.
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -53,9 +56,10 @@ class TechPointOutputSwitch(CoordinatorEntity, SwitchEntity):
         return None
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         out = self._current() or {}
-        return out.get("name") or f"Output {self._output_id}"
+        return entity_name(grouping, out.get("name"), self._output_id, "Output", primary=True)
 
     @property
     def is_on(self) -> bool | None:

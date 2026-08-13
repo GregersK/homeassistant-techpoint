@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2026-08-13
+
+### Fixed
+- Entity "name stutter" under `device_grouping: item`. HA composes the displayed
+  friendly name as `f"{device_name} {entity_name}"`; since each door/zone/area/
+  input/output already gets its own device named after itself in that mode (e.g.
+  "Dør Hjejlebakken"), entities that also embedded the same label in their own
+  `name` (e.g. the lock, or "Dør Hjejlebakken (Status)") produced doubled names
+  like "Dør Hjejlebakken Dør Hjejlebakken (Status)". Added `entity_name()` in
+  `device.py`, which is grouping-aware: under `item` grouping the entity that is
+  the primary representation of its device (lock, output switch, input sensor,
+  zone sensor, area alarm panel) now returns `None` (bare device name), and
+  secondary entities (door status/mode/pulse/open/sabotage) return just their
+  short suffix ("Status", "Tilstand", …) instead of repeating the door name.
+  Under `device_grouping: type` (the default, where many items share one
+  device) behavior is unchanged — the item's own label is still needed there
+  to tell entities apart.
+
+## [0.10.1] - 2026-08-13
+
+### Fixed
+- **Breaking on HA 2026.8**: `TechPointCoordinator` never passed `config_entry` to
+  `DataUpdateCoordinator.__init__`. HA 2026.8 removes the deprecated `ContextVar`
+  fallback that used to infer the coordinator's config entry automatically —
+  without an explicit `config_entry`, coordinator init now raises and the
+  integration fails to load. Fixed by threading the `ConfigEntry` through
+  `TechPointCoordinator.__init__` and passing `config_entry=entry` explicitly.
+- `strings.json` had drifted out of sync with `translations/en.json` (missing the
+  `entity.sensor.*` block and `options.step.init.data.event_log_max`, plus a
+  stale options description without the webhook placeholders actually used by
+  `config_flow.py`). Since `strings.json` is the schema source of truth for
+  hassfest and for other-language fallback, re-synced it to match `en.json`.
+
+### Changed
+- Added `PARALLEL_UPDATES = 1` to `switch`, `lock`, `select`, and `button` —
+  the four platforms that write to the controller — so entity actions are
+  serialized instead of firing concurrently against the same LAN device.
+
+## [0.10.0] - 2026-06-20
+
+### Added
+- New service `generate_dashboard_yaml`: builds ready-made Lovelace cards from the
+  entities currently registered for an entry — one "entities" card per door (lock,
+  open/sabotage sensors, mode select, pulse button), plus grouped cards for outputs,
+  inputs, zones, and one alarm-panel card per intrusion area. Returns the YAML
+  (and the raw card list) so it can be pasted into a dashboard's raw YAML editor.
+- New service `cleanup_stale_entities`: removes entities for doors/zones/areas/IO
+  that no longer exist on the TechPoint controller (e.g. a door was deleted there),
+  then removes any devices left empty by that.
+- Automatic background cleanup: the integration now also runs this stale-entity
+  check itself after every successful poll, removing an entity only once its
+  underlying object has been confirmed missing for several consecutive polls (so
+  a single transient API failure can never cause an entity to be deleted).
+
 ## [0.9.1] - 2026-06-12
 
 ### Fixed

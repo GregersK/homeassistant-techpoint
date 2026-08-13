@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import make_device_context, build_device_info
+from .device import make_device_context, build_device_info, entity_name
 from .util import find_by_id, normalize_id
 
 
@@ -64,11 +64,9 @@ class TechPointZoneSensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         z = self._current() or {}
-        base = z.get("name") or f"{self._zone_id}"
-        if str(base).lower().startswith("zone"):
-            return str(base)
-        return f"Zone {base}"
+        return entity_name(grouping, z.get("name"), self._zone_id, "Zone", primary=True)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -117,9 +115,10 @@ class TechPointInputSensor(CoordinatorEntity, BinarySensorEntity):
         return None
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         inp = self._current() or {}
-        return inp.get("name") or f"Input {self._input_id}"
+        return entity_name(grouping, inp.get("name"), self._input_id, "Input", primary=True)
 
     @property
     def is_on(self) -> bool | None:
@@ -166,10 +165,10 @@ class TechPointDoorOpenSensor(CoordinatorEntity, BinarySensorEntity):
         return find_by_id(snapshot.get("doors"), self._door_id)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         door = self._current() or {}
-        base = door.get("name") or f"{self._door_id}"
-        return f"{base} (Åben)"
+        return entity_name(grouping, door.get("name"), self._door_id, "Dør", suffix="Åben")
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -219,10 +218,10 @@ class TechPointDoorSabotageSensor(CoordinatorEntity, BinarySensorEntity):
         return find_by_id(snapshot.get("doors"), self._door_id)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         door = self._current() or {}
-        base = door.get("name") or f"{self._door_id}"
-        return f"{base} (Sabotage)"
+        return entity_name(grouping, door.get("name"), self._door_id, "Dør", suffix="Sabotage")
 
     @property
     def device_info(self) -> DeviceInfo:

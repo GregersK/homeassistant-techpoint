@@ -392,3 +392,28 @@ cleanup_orphan_devices:
       required: false
       selector:
         text: {}
+
+cleanup_stale_entities:
+  name: Cleanup stale entities
+  description: >-
+    Remove entities for doors/zones/areas/IO that no longer exist on the TechPoint
+    controller (e.g. a door was deleted), then remove any devices left empty by
+    that. Runs automatically in the background too; use this to act immediately.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}
+
+generate_dashboard_yaml:
+  name: Generate dashboard YAML
+  description: >-
+    Build ready-made Lovelace cards (one per door with its lock/buttons/sensors,
+    plus grouped cards for outputs, inputs, zones and areas) from the entities
+    currently registered for this entry. Returns the YAML under the "yaml" key —
+    paste it into a new dashboard view (raw YAML editor).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text: {}

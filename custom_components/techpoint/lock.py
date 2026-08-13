@@ -10,8 +10,11 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import make_device_context, build_device_info
+from .device import make_device_context, build_device_info, entity_name
 from .util import find_by_id, normalize_id
+
+# Serialize writes against the controller instead of firing them concurrently.
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -48,11 +51,9 @@ class TechPointDoorLock(CoordinatorEntity, LockEntity):
 
     @property
     def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         door = self._current() or {}
-        base = door.get("name") or f"{self._door_id}"
-        if str(base).lower().startswith("dør") or str(base).lower().startswith("door"):
-            return str(base)
-        return f"Dør {base}"
+        return entity_name(grouping, door.get("name"), self._door_id, "Dør", primary=True)
 
     @property
     def device_info(self) -> DeviceInfo:
