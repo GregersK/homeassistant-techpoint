@@ -4,6 +4,7 @@ from datetime import timedelta
 import asyncio
 import logging
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.core import HomeAssistant
 
@@ -14,6 +15,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
     def __init__(
         self,
         hass: HomeAssistant,
+        entry: ConfigEntry,
         client,
         name: str,
         update_interval_s: int,
@@ -21,6 +23,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=name,
             update_interval=timedelta(seconds=update_interval_s),
         )

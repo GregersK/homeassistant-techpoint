@@ -100,6 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client = create_client(hass, cfg[CONF_BASE_URL], cfg)
     coordinator = TechPointCoordinator(
         hass,
+        entry,
         client,
         cfg.get(CONF_NAME, DEFAULT_NAME),
         int(cfg.get(CONF_SCAN_INTERVAL, 10)),

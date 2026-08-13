@@ -12,6 +12,9 @@ from .const import DOMAIN
 from .coordinator import TechPointCoordinator
 from .device import make_device_context, build_device_info
 
+# Serialize writes against the controller instead of firing them concurrently.
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

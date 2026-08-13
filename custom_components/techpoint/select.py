@@ -13,6 +13,9 @@ from .coordinator import TechPointCoordinator
 from .device import make_device_context, build_device_info
 from .util import find_by_id, normalize_id
 
+# Serialize writes against the controller instead of firing them concurrently.
+PARALLEL_UPDATES = 1
+
 """Select entities.
 
 We intentionally use *internal* option keys (lowercase snake_case) and rely on

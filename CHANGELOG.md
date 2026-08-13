@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2026-08-13
+
+### Fixed
+- **Breaking on HA 2026.8**: `TechPointCoordinator` never passed `config_entry` to
+  `DataUpdateCoordinator.__init__`. HA 2026.8 removes the deprecated `ContextVar`
+  fallback that used to infer the coordinator's config entry automatically —
+  without an explicit `config_entry`, coordinator init now raises and the
+  integration fails to load. Fixed by threading the `ConfigEntry` through
+  `TechPointCoordinator.__init__` and passing `config_entry=entry` explicitly.
+- `strings.json` had drifted out of sync with `translations/en.json` (missing the
+  `entity.sensor.*` block and `options.step.init.data.event_log_max`, plus a
+  stale options description without the webhook placeholders actually used by
+  `config_flow.py`). Since `strings.json` is the schema source of truth for
+  hassfest and for other-language fallback, re-synced it to match `en.json`.
+
+### Changed
+- Added `PARALLEL_UPDATES = 1` to `switch`, `lock`, `select`, and `button` —
+  the four platforms that write to the controller — so entity actions are
+  serialized instead of firing concurrently against the same LAN device.
+
 ## [0.10.0] - 2026-06-20
 
 ### Added
