@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2026-08-13
+
+### Fixed
+- Entity "name stutter" under `device_grouping: item`. HA composes the displayed
+  friendly name as `f"{device_name} {entity_name}"`; since each door/zone/area/
+  input/output already gets its own device named after itself in that mode (e.g.
+  "Dør Hjejlebakken"), entities that also embedded the same label in their own
+  `name` (e.g. the lock, or "Dør Hjejlebakken (Status)") produced doubled names
+  like "Dør Hjejlebakken Dør Hjejlebakken (Status)". Added `entity_name()` in
+  `device.py`, which is grouping-aware: under `item` grouping the entity that is
+  the primary representation of its device (lock, output switch, input sensor,
+  zone sensor, area alarm panel) now returns `None` (bare device name), and
+  secondary entities (door status/mode/pulse/open/sabotage) return just their
+  short suffix ("Status", "Tilstand", …) instead of repeating the door name.
+  Under `device_grouping: type` (the default, where many items share one
+  device) behavior is unchanged — the item's own label is still needed there
+  to tell entities apart.
+
 ## [0.10.1] - 2026-08-13
 
 ### Fixed

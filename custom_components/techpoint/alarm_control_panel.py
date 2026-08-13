@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TechPointCoordinator
-from .device import make_device_context, build_device_info
+from .device import make_device_context, build_device_info, entity_name
 
 FEATURES = (
     AlarmControlPanelEntityFeature.ARM_AWAY
@@ -70,11 +70,9 @@ class TechPointAreaAlarm(CoordinatorEntity, AlarmControlPanelEntity):
 
     @property
     def name(self) -> str | None:
+        grouping = self.coordinator.hass.data[DOMAIN][self._entry_id].get("device_grouping")
         cur = self._current() or {}
-        base = cur.get("name") or f"{self._area_id}"
-        if str(base).lower().startswith("area") or str(base).lower().startswith("område"):
-            return str(base)
-        return f"Area {base}"
+        return entity_name(grouping, cur.get("name"), self._area_id, "Area", primary=True)
 
     @property
     def device_info(self) -> DeviceInfo:
