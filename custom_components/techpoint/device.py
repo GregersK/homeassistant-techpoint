@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import (
@@ -23,6 +24,7 @@ class DeviceContext:
     controller_name: str
     manufacturer: str = MANUFACTURER
     model_controller: str = MODEL_CONTROLLER
+    controller_device_id: Optional[str] = None
 
 
 def make_device_context(hass: Any, entry_id: str, controller_name: str) -> DeviceContext:
@@ -33,7 +35,19 @@ def make_device_context(hass: Any, entry_id: str, controller_name: str) -> Devic
         controller_name=controller_name,
         manufacturer=data.get("manufacturer", MANUFACTURER),
         model_controller=data.get("model_controller", MODEL_CONTROLLER),
+        controller_device_id=data.get("controller_device_id"),
     )
+
+
+# HA 2026.8 deprecated DeviceInfo["via_device"] (identifier-based) in favor of
+# via_device_id; older releases don't accept via_device_id at all.
+_USE_VIA_DEVICE_ID = (MAJOR_VERSION, MINOR_VERSION) >= (2026, 8)
+
+
+def _via(ctx: DeviceContext) -> dict[str, Any]:
+    if _USE_VIA_DEVICE_ID:
+        return {"via_device_id": ctx.controller_device_id} if ctx.controller_device_id else {}
+    return {"via_device": (DOMAIN, ctx.entry_id)}
 
 
 def prefixed_item_name(item_name: Optional[str], item_id: Any, prefix: str) -> str:
@@ -145,7 +159,7 @@ def build_device_info(
             name=prefixed_item_name(item_name, item_id, item_prefix),
             manufacturer=ctx.manufacturer,
             model=model_item,
-            via_device=(DOMAIN, ctx.entry_id),
+            **_via(ctx),
         )
 
     # GROUP_BY_TYPE
@@ -154,5 +168,5 @@ def build_device_info(
         name=group_name,
         manufacturer=ctx.manufacturer,
         model=model_group,
-        via_device=(DOMAIN, ctx.entry_id),
+        **_via(ctx),
     )

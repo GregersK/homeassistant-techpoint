@@ -112,6 +112,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(f"TechPoint: initial refresh failed: {err}") from err
 
     # Create controller device in registry (nice 'Shelly-like' UI)
+    controller_device_id = None
     try:
         api_info = (coordinator.data or {}).get("api_info") or {}
         sw = api_info.get("version") or api_info.get("apiVersion") or api_info.get("api_version")
@@ -131,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             sw_version = str(sw)
 
         device_registry = dr.async_get(hass)
-        device_registry.async_get_or_create(
+        controller_device_id = device_registry.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, entry.entry_id)},
             name=cfg.get(CONF_NAME, DEFAULT_NAME),
@@ -139,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             model=MODEL_CONTROLLER,
             sw_version=sw_version,
             configuration_url=cfg.get(CONF_BASE_URL),
-        )
+        ).id
     except Exception:  # noqa: BLE001
         _LOGGER.debug("TechPoint: could not create controller device entry", exc_info=True)
 
@@ -147,6 +148,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "client": client,
         "coordinator": coordinator,
         "controller_identifier": (DOMAIN, entry.entry_id),
+        "controller_device_id": controller_device_id,
         "device_grouping": cfg.get(CONF_DEVICE_GROUPING, DEFAULT_DEVICE_GROUPING),
         "manufacturer": MANUFACTURER,
         "model_controller": MODEL_CONTROLLER,

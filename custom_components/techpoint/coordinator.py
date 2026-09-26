@@ -3,12 +3,18 @@ from typing import Any, Dict
 from datetime import timedelta
 import asyncio
 import logging
+import time
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
+
+# Backoff schedule (seconds) applied per optional resource key after a fetch
+# failure, so a transient glitch heals itself instead of disabling that data
+# type until the integration is reloaded. Capped at the last value.
+_RETRY_BACKOFF_S = (30, 60, 120, 300)
 
 
 class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
@@ -28,14 +34,22 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             update_interval=timedelta(seconds=update_interval_s),
         )
         self.client = client
-        # Keys that have failed at least once — skipped on subsequent polls
-        # to avoid spamming the controller's error log. Reset on reload.
-        self._disabled_keys: set[str] = set()
+        # Per-key failure bookkeeping for optional resources: consecutive failure
+        # count and the monotonic time before which we won't retry that key.
+        # A transient failure backs off and retries on its own — it never
+        # permanently disables a data type the way an unconditional "skip
+        # forever" flag would (that previously required a full integration
+        # reload to recover from a single blip).
+        self._key_fail_count: dict[str, int] = {}
+        self._key_retry_after: dict[str, float] = {}
         # Keys whose fetch succeeded on the most recent poll cycle. Used to gate
         # stale-entity cleanup so a single transient API failure (which leaves
         # that key's data empty for the cycle) can never be mistaken for a
         # door/zone/output that was actually removed on the controller.
         self.last_cycle_ok_keys: set[str] = set()
+
+    def _due_for_retry(self, key: str, now: float) -> bool:
+        return now >= self._key_retry_after.get(key, 0.0)
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch doors, AIA area/zone status, user-defined I/O, cardholder count, and controller state."""
@@ -48,31 +62,32 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             get_global_door_control = getattr(self.client, "get_global_door_control", None)
             get_threat_level = getattr(self.client, "get_threat_level", None)
 
+            now = time.monotonic()
             tasks: list = [self.client.list_doors()]
             task_keys = ["doors"]
 
-            if list_areas and "areas" not in self._disabled_keys:
+            if list_areas and self._due_for_retry("areas", now):
                 tasks.append(list_areas())
                 task_keys.append("areas")
-            if list_zones and "zones" not in self._disabled_keys:
+            if list_zones and self._due_for_retry("zones", now):
                 tasks.append(list_zones())
                 task_keys.append("zones")
-            if get_api_info and "api_info" not in self._disabled_keys:
+            if get_api_info and self._due_for_retry("api_info", now):
                 tasks.append(get_api_info())
                 task_keys.append("api_info")
-            if get_io and "io_inputs" not in self._disabled_keys:
+            if get_io and self._due_for_retry("io_inputs", now):
                 tasks.append(get_io(28))
                 task_keys.append("io_inputs")
-            if get_io and "io_outputs" not in self._disabled_keys:
+            if get_io and self._due_for_retry("io_outputs", now):
                 tasks.append(get_io(29))
                 task_keys.append("io_outputs")
-            if list_cardholders_filter and "cardholders_meta" not in self._disabled_keys:
+            if list_cardholders_filter and self._due_for_retry("cardholders_meta", now):
                 tasks.append(list_cardholders_filter({"cardHolderFilter": {"doNotFetchData": True}}))
                 task_keys.append("cardholders_meta")
-            if get_global_door_control and "global_door_control" not in self._disabled_keys:
+            if get_global_door_control and self._due_for_retry("global_door_control", now):
                 tasks.append(get_global_door_control())
                 task_keys.append("global_door_control")
-            if get_threat_level and "threat_level" not in self._disabled_keys:
+            if get_threat_level and self._due_for_retry("threat_level", now):
                 tasks.append(get_threat_level())
                 task_keys.append("threat_level")
 
@@ -86,18 +101,23 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             ok_keys: set[str] = set()
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
-                    # First failure for this optional key: disable it for this session
-                    # so we don't keep spamming TechPoint with failing requests.
                     if key != "doors":
-                        self._disabled_keys.add(key)
+                        count = self._key_fail_count.get(key, 0) + 1
+                        self._key_fail_count[key] = count
+                        backoff = _RETRY_BACKOFF_S[min(count, len(_RETRY_BACKOFF_S)) - 1]
+                        self._key_retry_after[key] = now + backoff
                         _LOGGER.warning(
-                            "TechPoint: %s fetch failed (disabled until reload): %s",
+                            "TechPoint: %s fetch failed (retrying in %ss): %s",
                             key,
+                            backoff,
                             val,
                         )
                     else:
                         _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
                     continue
+                if key != "doors":
+                    self._key_fail_count.pop(key, None)
+                    self._key_retry_after.pop(key, None)
                 ok_keys.add(key)
                 if key == "cardholders_meta":
                     data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None
