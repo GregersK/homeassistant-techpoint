@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.4] - 2026-09-26
+
+### Changed
+- Devices now link to the controller with `via_device_id` instead of the
+  identifier-based `via_device`, which HA 2026.8 deprecated (devices are now
+  scoped to a single config entry, so identifiers no longer point at one device
+  unambiguously). Custom integrations only get a warning today, but it becomes
+  an error in HA 2027.8. The controller's device id is taken from the
+  `async_get_or_create` result in `async_setup_entry`. On HA releases older than
+  2026.8, which don't accept `via_device_id`, `via_device` is still used.
+
 ## [0.10.3] - 2026-09-26
 
 ### Fixed
