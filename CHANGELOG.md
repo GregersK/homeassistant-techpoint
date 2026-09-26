@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.3] - 2026-09-26
+
+### Fixed
+- **Areas/zones/inputs/outputs going permanently "Unknown" after a single transient
+  API hiccup, requiring an integration reload to recover.** The coordinator used
+  to permanently disable a data type (e.g. "areas") for the rest of the running
+  session on its very first fetch failure — even a one-off network blip that had
+  nothing to do with the TechPoint controller itself. Since that data type was
+  never fetched again, its snapshot list stayed empty forever, and every entity
+  backed by it (e.g. all intrusion-area alarm panels) showed "Unknown" state
+  indefinitely. Replaced the permanent per-key disable with a self-healing
+  exponential backoff (30s → 60s → 120s → 300s, capped): a resource that fails
+  now automatically retries and recovers within at most 5 minutes on its own,
+  no reload required.
+
 ## [0.10.2] - 2026-08-13
 
 ### Fixed
