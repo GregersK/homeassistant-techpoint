@@ -3,7 +3,7 @@
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 ![Version](https://img.shields.io/badge/version-0.10.4-blue.svg)
-[![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2024.1-blue.svg)](https://www.home-assistant.io/)
+[![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2026.3-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
 
@@ -15,8 +15,10 @@ Custom Home Assistant integration for **TechPoint Access Control Systems** (both
 - **Smart Device Grouping**: Group devices by type or per-item for flexible organization
 - **Multi-language**: Danish (da), English (en), and 10+ other languages
 - **Custom Services**: Door control, access management, threat level, global door control, and more
-- **Sensors & State**: Monitor battery, signal strength, last activity, cardholder count, and system status
+- **Sensors & State**: Door status, door open and tamper sensors, cardholder count, and a live event log
 - **Access Management**: Full cardholder and card management with example dashboard
+- **Dashboard generator**: One service call builds ready-made dashboard cards for all your doors, outputs, zones and areas
+- **Self-maintaining**: Entities for doors/outputs removed on the controller are cleaned up automatically, and a temporary connection problem recovers on its own without a reload
 
 ## Installation
 
@@ -46,7 +48,7 @@ Restart Home Assistant.
 
 ### Prerequisites
 
-- Home Assistant 2024.1 or later
+- Home Assistant 2026.3 or later
 - TechPoint API access — requires an API LAN or Cloud license on the TechPoint / Siedle Secure SC-600
 - Network connectivity to the TechPoint controller
 
@@ -75,13 +77,14 @@ Restart Home Assistant.
 
 | Platform | Description |
 |---|---|
-| **Lock** | Door locks — open, release, secure, block |
+| **Lock** | Door lock — lock (Secure) / unlock (Permanent release) |
 | **Select** | Door mode selection (Normal, Release, PermanentRelease, Secure, Block) |
-| **Button** | Momentary pulse actions |
+| **Button** | Pulse-open a door (momentary release) |
 | **Alarm Control Panel** | Area intrusion arm/disarm |
-| **Binary Sensor** | Zone intrusion detection + user-defined inputs (ioType 28) |
-| **Switch** | User-defined outputs (ioType 29) — toggle active/passive |
+| **Binary Sensor** | Door open, door tamper, zone intrusion detection, user-defined inputs (ioType 28) |
+| **Switch** | User-defined outputs (ioType 29) — toggle active/passive; global door control |
 | **Sensor** | Door status, cardholder count, event log, webhook URL |
+| **Select** (controller) | Threat level (off, normal, level 1–3) |
 
 ## Device Grouping
 
@@ -110,6 +113,7 @@ The integration provides the following custom services:
 | `techpoint.access_update_card` | Update an access card (use `accessGroupLinks` to assign access groups) |
 | `techpoint.access_delete_card` | Delete an access card |
 | `techpoint.access_get_groups` | List access groups — returns `access_groups` list |
+| `techpoint.access_get_static_types` | List card option types — returns `types` |
 | `techpoint.management_get_global_door_control` | Get global door control state — returns `active` (bool) |
 | `techpoint.management_set_global_door_control` | Open or close all globally-controlled doors (`active: true/false`) |
 | `techpoint.management_get_threat_level` | Get current threat level — returns `level` (0–4) |
@@ -120,11 +124,30 @@ The integration provides the following custom services:
 | `techpoint.events_get` | Query events with optional filters |
 | `techpoint.call_api` | Call any TechPoint API endpoint directly |
 | `techpoint.refresh` | Trigger an immediate data refresh |
+| `techpoint.get_cache` | Return the latest polled snapshot (doors, areas, zones, I/O, …) |
+| `techpoint.generate_dashboard_yaml` | Build ready-made Lovelace cards for this controller — returns `yaml` (see [Dashboard generator](#dashboard-generator)) |
+| `techpoint.cleanup_stale_entities` | Immediately remove entities for doors/zones/areas/I/O no longer present on the controller, plus devices left empty |
 | `techpoint.cleanup_orphan_devices` | Remove legacy orphan devices |
 
 See `custom_components/techpoint/services.yaml` for full parameter documentation.
 
 > **Note:** The `entry_id` parameter is optional for all services. When only one TechPoint integration instance is configured, it is detected automatically.
+
+## Dashboard generator
+
+Instead of building cards by hand, let the integration generate them:
+
+1. Go to **Developer tools → Actions**, pick **TechPoint: Generate dashboard YAML** and run it (add `entry_id` if you have more than one TechPoint).
+2. Copy the `yaml` value from the response.
+3. Create a new dashboard (or view), open **⋮ → Edit dashboard → ⋮ → Raw configuration editor**, and paste it.
+
+You get one card per door (lock, open/tamper sensors, mode select, pulse button), a card each for outputs, inputs and zones, and an alarm panel per intrusion area. Run it again after adding doors or outputs on the controller.
+
+## Automatic cleanup
+
+When a door, zone, area or I/O is deleted on the TechPoint controller, its entities are removed automatically once several consecutive polls confirm it is gone, so a single failed request never deletes anything. Run `techpoint.cleanup_stale_entities` to clean up immediately.
+
+If the controller or network is briefly unreachable, affected data is retried with increasing intervals (30 s up to 5 min) and recovers by itself — no reload needed.
 
 ## Access Management Package
 
