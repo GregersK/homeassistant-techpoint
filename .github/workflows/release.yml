@@ -64,7 +64,9 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          NOTES=$(awk "/^## \[?v?${VERSION}\]?/,/^## \[?v?[0-9]/" CHANGELOG.md | head -n -1 | tail -n +2)
+          # A range pattern stops on the start heading itself (it also matches
+          # the end pattern), yielding empty notes; print until the next heading.
+          NOTES=$(awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 || index($0, "## [v" v "]") == 1 {f=1; next} f && /^## / {exit} f' CHANGELOG.md)
           if [ -z "$NOTES" ]; then
             NOTES="See [CHANGELOG.md](CHANGELOG.md) for details."
           fi
