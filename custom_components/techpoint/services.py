@@ -206,7 +206,7 @@ def _build_dashboard_view(hass: HomeAssistant, entry_id: str) -> Dict[str, Any]:
     if zones:
         cards.append({"type": "entities", "title": "Zoner", "entities": sorted(zones)})
     for area_entity in sorted(areas):
-        cards.append({"type": "alarm-panel", "entity": area_entity, "states": ["arm_away", "arm_home"]})
+        cards.append({"type": "alarm-panel", "entity": area_entity, "states": ["arm_away"]})
     if controller:
         cards.append({"type": "entities", "title": "Controller", "entities": sorted(controller)})
 

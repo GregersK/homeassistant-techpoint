@@ -23,7 +23,12 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import TechPointCoordinator
-from .webhook import async_setup_realtime_events, async_unload_realtime_events, async_remove_realtime_events
+from .webhook import (
+    async_remove_realtime_events,
+    async_setup_realtime_events,
+    async_unload_realtime_events,
+    ensure_webhook_id,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -154,10 +159,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "model_controller": MODEL_CONTROLLER,
     }
 
-    # Real-time events via TechPoint WebHook (LAN only)
+    # Real-time events via TechPoint WebHook (LAN only). The id is generated here,
+    # before the update listener is attached, so storing it doesn't trigger a reload.
+    ensure_webhook_id(hass, entry)
     await async_setup_realtime_events(hass, entry, client, cfg)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # The webhook URL sensor was removed (it exposed the URL to every user).
+    ent_reg = er.async_get(hass)
+    if old_id := ent_reg.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_webhook_url"):
+        ent_reg.async_remove(old_id)
 
     # Register services
     from .services import async_register_services

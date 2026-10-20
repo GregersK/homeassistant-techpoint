@@ -8,7 +8,6 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, SIGNAL_EVENT_LOG_UPDATED
 from .coordinator import TechPointCoordinator
@@ -54,8 +53,6 @@ async def async_setup_entry(
     entities.append(TechPointLastEventSensor(hass, entry.entry_id, coordinator.name))
     # 3) Rolling event log sensor (keeps last N events in attributes)
     entities.append(TechPointEventLogSensor(hass, entry.entry_id, coordinator.name))
-    # 4) Webhook URL (copy/paste into TechPoint UI)
-    entities.append(TechPointWebhookUrlSensor(hass, entry.entry_id, coordinator.name))
 
     if entities:
         async_add_entities(entities)
@@ -249,8 +246,6 @@ class TechPointEventLogLineSensor(SensorEntity):
             "reader": last.get("reader"),
             "who": last.get("who"),
             "action": last.get("action"),
-            "card_badge": last.get("card_badge"),
-            "chip_serial": last.get("chip_serial"),
             "type_id": last.get("type_id"),
             "type_name": last.get("type_name"),
         }
@@ -313,6 +308,8 @@ class TechPointEventLogSensor(SensorEntity):
     """Rolling TechPoint event log (last N events) for dashboards."""
 
     _attr_has_entity_name = True
+    # The full log is far over the recorder's 16 KB attribute limit.
+    _unrecorded_attributes = frozenset({"events", "last"})
     _attr_icon = "mdi:format-list-bulleted"
 
     def __init__(self, hass: HomeAssistant, entry_id: str, controller_name: str) -> None:
@@ -374,51 +371,3 @@ class TechPointEventLogSensor(SensorEntity):
             # Full rolling log (newest first)
             "events": log,
         }
-
-
-class TechPointWebhookUrlSensor(SensorEntity):
-    """Expose the HA webhook URL for easy copy/paste into TechPoint UI."""
-
-    _attr_has_entity_name = True
-    _attr_icon = "mdi:webhook"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(self, hass: HomeAssistant, entry_id: str, controller_name: str) -> None:
-        self.hass = hass
-        self._entry_id = entry_id
-        self._controller_name = controller_name
-        self._attr_unique_id = f"{entry_id}_webhook_url"
-        self._attr_translation_key = "webhook_url"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            name=self._controller_name,
-        )
-
-    @property
-    def native_value(self) -> Any:
-        data = (self.hass.data.get(DOMAIN) or {}).get(self._entry_id) or {}
-        url = data.get("webhook_url")
-        if url:
-            return str(url)
-        # If realtime isn't enabled yet, we still can show the URL we *would* use.
-        try:
-            from .webhook import get_webhook_url  # local import to avoid cycles
-
-            return get_webhook_url(self.hass, self._entry_id)
-        except Exception:  # noqa: BLE001
-            return ""
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        data = (self.hass.data.get(DOMAIN) or {}).get(self._entry_id) or {}
-        return {
-            "auth_type": "None",
-            "techpoint_endpoint": "/events/webhook",
-            "webhook_id": data.get("webhook_id"),
-            "event_filter": data.get("webhook_filter"),
-            "registered_at": data.get("webhook_registered_at"),
-        }
-

@@ -16,11 +16,10 @@ from .const import DOMAIN
 from .coordinator import TechPointCoordinator
 from .device import make_device_context, build_device_info, entity_name
 
-FEATURES = (
-    AlarmControlPanelEntityFeature.ARM_AWAY
-    | AlarmControlPanelEntityFeature.ARM_HOME
-    | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
-)
+# TechPoint's intrusion API only offers Set/Unset for an area (no partial set or
+# bypass command), so only arm away is advertised. Partial-set/isolated states the
+# controller reports are still shown via STATE_MAP.
+FEATURES = AlarmControlPanelEntityFeature.ARM_AWAY
 
 # TechPoint state -> HA AlarmControlPanelState
 STATE_MAP: dict[int, AlarmControlPanelState] = {

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-10-20
+
+Security and privacy fixes from the HACS review.
+
+### Security
+- **Webhook only accepts the controller.** Calls whose source address is not the
+  configured controller are rejected with HTTP 403, so a leaked URL can no longer
+  be used to inject fake access-granted or alarm events. The webhook is registered
+  with `local_only=True` (not reachable through Home Assistant Cloud), and its id
+  is now a random token stored in the config entry instead of `techpoint_<entry_id>`.
+  The new URL is pushed to the controller automatically on the next start.
+- **No credential data leaves the integration.** Card numbers and chip serials
+  (event detail types 1503, 1504, 1506) are stripped from the event before it
+  reaches state attributes, the recorder, the `techpoint_event` bus event or the
+  event log. The bus event no longer carries the `raw` event.
+
+### Removed
+- The **Webhook URL** sensor, which showed the URL to every user. It is removed
+  from the entity registry on upgrade. The URL is still shown in the options
+  form, which only admins can open.
+- `card_badge` and `chip_serial` attributes on the *Latest event* sensor, and
+  the same fields on *Last event* and in the *Event log*.
+- Arm home and arm custom bypass on the area alarm panels. TechPoint's API has
+  no command for them, so the buttons raised `NotImplementedError`. Partial-set
+  and isolated states reported by the controller are still shown.
+
+### Changed
+- The *Event log* sensor's `events` and `last` attributes are excluded from the
+  recorder (the full log is far over its 16 KB attribute limit).
+- Diagnostics now redact the cloud `username`, `device_id` and webhook id/URL,
+  and include only a non-personal summary of the latest event (no cardholder or
+  operator name, no details).
+- The webhook URL is no longer written to the log at info level.
+
 ## [0.10.4] - 2026-09-26
 
 ### Changed

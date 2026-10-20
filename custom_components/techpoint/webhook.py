@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import ipaddress
 import logging
+import secrets
+import socket
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from urllib.parse import urlparse
+
+from aiohttp import web
 
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
@@ -27,6 +33,7 @@ from .const import (
     MODE_LAN,
     SIGNAL_EVENT_LOG_UPDATED,
     CONF_MODE,
+    CONF_BASE_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,13 +47,30 @@ def get_webhook_url(hass: HomeAssistant, entry_id: str) -> str:
     return _build_webhook_url(hass, entry_id)
 
 
-def _webhook_id(entry_id: str) -> str:
-    # Stable per config entry
-    return f"{DOMAIN}_{entry_id}"
+CONF_WEBHOOK_ID = "webhook_id"
+
+# TechPoint event detail types that carry credential data. A card number or chip
+# serial is exactly what is needed to clone a badge, so these never leave the
+# integration (state attributes, the recorder, event bus or diagnostics).
+_SENSITIVE_DETAIL_TYPES = frozenset({1503, 1504, 1506})
+
+
+def ensure_webhook_id(hass: HomeAssistant, entry) -> str:
+    """Return the entry's random webhook id, generating and storing it on first use."""
+    wid = entry.data.get(CONF_WEBHOOK_ID)
+    if not wid:
+        wid = secrets.token_hex(32)
+        hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_WEBHOOK_ID: wid})
+    return wid
+
+
+def _webhook_id(entry) -> str:
+    return entry.data.get(CONF_WEBHOOK_ID) or ""
 
 
 def _build_webhook_url(hass: HomeAssistant, entry_id: str) -> str:
-    wid = _webhook_id(entry_id)
+    entry = hass.config_entries.async_get_entry(entry_id)
+    wid = _webhook_id(entry) if entry else ""
     base = None
     if get_url is not None:
         try:
@@ -99,6 +123,24 @@ def _iter_events(payload: Any) -> Iterable[Dict[str, Any]]:
         return [ev]
 
     return []
+
+
+def _safe_details(details: Any) -> List[Dict[str, Any]]:
+    """Return event details with credential fields (card number, chip serial) removed."""
+    if not isinstance(details, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for d in details:
+        if not isinstance(d, dict):
+            continue
+        try:
+            dtype = int(d.get("type"))
+        except (TypeError, ValueError):
+            dtype = None
+        if dtype in _SENSITIVE_DETAIL_TYPES:
+            continue
+        out.append(d)
+    return out
 
 
 def _details_values(details: Any) -> List[str]:
@@ -220,7 +262,7 @@ def _parse_event_for_ui(category: str, type_id: Optional[int], type_name: Option
     Keeps raw details, but also extracts common fields like door/reader/area/who and normalizes
     an `action` + optional `source` for stable automations/Node-RED.
     """
-    details = ev.get("details")
+    details = _safe_details(ev.get("details"))
 
     # Common fields (door/access)
     door = _detail_value(details, 1500)
@@ -238,10 +280,6 @@ def _parse_event_for_ui(category: str, type_id: Optional[int], type_name: Option
     )
     if who:
         who = str(who).strip()
-
-    # Badge/serial (access events)
-    card_badge = _detail_value(details, 1503) or _detail_value(details, 1506)
-    chip_serial = _detail_value(details, 1504)
 
     # Access denied reason/message
     reason = _detail_value(details, 1507)
@@ -343,12 +381,9 @@ def _parse_event_for_ui(category: str, type_id: Optional[int], type_name: Option
         "source": source,
         "alarm_mode": alarm_mode,
         "reason": reason,
-        "card_badge": card_badge,
-        "chip_serial": chip_serial,
         "summary": summary,
         "line": line,
         "details_values": _details_values(details),
-        "details": details,
     }
 
 def _classify_event(type_name: Optional[str], details_values: List[str]) -> str:
@@ -395,15 +430,71 @@ def _is_enabled(category: str, enabled: Tuple[bool, bool, bool, bool]) -> bool:
     return any(enabled)
 
 
-async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request) -> None:
+def _controller_host(cfg: Dict[str, Any]) -> Optional[str]:
+    raw = str(cfg.get(CONF_BASE_URL) or "").strip()
+    if not raw:
+        return None
+    if "://" not in raw:
+        raw = f"https://{raw}"
+    return urlparse(raw).hostname
+
+
+def _resolve_controller_ips(host: str) -> set:
+    """Resolve the controller host to the set of IP addresses it may call from (blocking)."""
+    try:
+        return {ipaddress.ip_address(host)}
+    except ValueError:
+        pass
+    ips = set()
+    for info in socket.getaddrinfo(host, None):
+        try:
+            ips.add(ipaddress.ip_address(info[4][0]))
+        except ValueError:
+            continue
+    return ips
+
+
+def _normalize_ip(remote: Optional[str]):
+    if not remote:
+        return None
+    try:
+        ip = ipaddress.ip_address(remote)
+    except ValueError:
+        return None
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        return ip.ipv4_mapped
+    return ip
+
+
+async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request):
     # NOTE: signature is HA webhook handler signature
+    entry_id = next(
+        (
+            eid
+            for eid, data in (hass.data.get(DOMAIN) or {}).items()
+            if isinstance(data, dict) and data.get("webhook_id") == webhook_id
+        ),
+        None,
+    )
+    entry_data = (hass.data.get(DOMAIN) or {}).get(entry_id) or {} if entry_id else {}
+
+    # Only the configured controller may push events. Anything else (e.g. a request
+    # that reached the URL via a reverse proxy) could inject fake access/alarm events.
+    allowed_ips = entry_data.get("webhook_allowed_ips") or set()
+    remote = _normalize_ip(request.remote)
+    if remote is None or remote not in allowed_ips:
+        # Warn once per source, so a misconfiguration is visible but a flood of
+        # rejected calls can't fill the log.
+        warned = entry_data.setdefault("webhook_rejected_sources", set())
+        log = _LOGGER.debug if request.remote in warned else _LOGGER.warning
+        warned.add(request.remote)
+        log("TechPoint: rejected webhook call from %s (not the configured controller)", request.remote)
+        return web.Response(status=403)
+
     try:
         payload = await request.json()
     except Exception:  # noqa: BLE001
         payload = None
-
-    entry_id = webhook_id.replace(f"{DOMAIN}_", "", 1)
-    entry_data = (hass.data.get(DOMAIN) or {}).get(entry_id) or {}
 
     cfg = entry_data.get("cfg") or {}
     enabled = _enabled_categories(cfg)
@@ -419,7 +510,8 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request) -> None
             type_id_i = None
 
         type_name = type_names.get(type_id_i) if type_id_i is not None else None
-        details_vals = _details_values(ev.get("details"))
+        safe_details = _safe_details(ev.get("details"))
+        details_vals = _details_values(safe_details)
         category = _classify_event(type_name, details_vals)
 
         if not _is_enabled(category, enabled):
@@ -431,12 +523,11 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request) -> None
             "type_id": type_id_i,
             "type_name": type_name,
             "event_time": _to_local_iso(ev.get("eventTime")),
-        "event_time_utc": ev.get("eventTime"),
+            "event_time_utc": ev.get("eventTime"),
             "clear_time": ev.get("clearTime"),
             "techpoint_id": ev.get("techPointId"),
-            "details": ev.get("details"),
+            "details": safe_details,
             "details_values": details_vals,
-            "raw": ev,
         }
         hass.bus.async_fire(EVENT_BUS_NAME, data)
         hass.bus.async_fire(f"{DOMAIN}_event", data)
@@ -540,15 +631,33 @@ async def async_setup_realtime_events(hass: HomeAssistant, entry, client, cfg: D
             pass
 
         try:
-            async_unregister(hass, _webhook_id(entry.entry_id))
+            async_unregister(hass, _webhook_id(entry))
         except Exception:  # noqa: BLE001
             pass
         return
 
-    # Register HA webhook (idempotent)
-    wid = _webhook_id(entry.entry_id)
+    host = _controller_host(cfg)
+    allowed_ips: set = set()
+    if host:
+        try:
+            allowed_ips = await hass.async_add_executor_job(_resolve_controller_ips, host)
+        except OSError as err:
+            _LOGGER.warning("TechPoint: could not resolve controller %s for webhook: %s", host, err)
+    if not allowed_ips:
+        _LOGGER.warning("TechPoint: no controller address known; realtime webhook calls will be rejected")
+
+    wid = _webhook_id(entry)
+    if not wid:
+        _LOGGER.warning("TechPoint: no webhook id stored for entry; realtime events disabled")
+        return
+    if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
+        hass.data[DOMAIN][entry.entry_id]["webhook_allowed_ips"] = allowed_ips
+        hass.data[DOMAIN][entry.entry_id]["webhook_id"] = wid
+
+    # Register HA webhook (idempotent). local_only: the controller is on the LAN,
+    # so the endpoint must not be reachable through Home Assistant Cloud.
     try:
-        async_register(hass, DOMAIN, "TechPoint", wid, _handle_webhook)
+        async_register(hass, DOMAIN, "TechPoint", wid, _handle_webhook, local_only=True)
     except Exception:  # noqa: BLE001
         # If already registered, ignore
         _LOGGER.debug("TechPoint: webhook already registered", exc_info=True)
@@ -579,7 +688,6 @@ async def async_setup_realtime_events(hass: HomeAssistant, entry, client, cfg: D
 
     # Expose for diagnostics/UI (copy/paste into TechPoint)
     if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
-        hass.data[DOMAIN][entry.entry_id]["webhook_id"] = wid
         hass.data[DOMAIN][entry.entry_id]["webhook_url"] = webhook_url
         hass.data[DOMAIN][entry.entry_id]["webhook_filter"] = event_filter
 
@@ -587,12 +695,8 @@ async def async_setup_realtime_events(hass: HomeAssistant, entry, client, cfg: D
         if hasattr(client, "set_events_webhook"):
             await client.set_events_webhook(url=webhook_url, event_filter=event_filter, auth_type="None")
             registered_at = dt_util.now().isoformat()
-            _LOGGER.info(
-                "TechPoint: webhook POST sent to /events/webhook at %s | url=%s | filter=%s",
-                registered_at,
-                webhook_url,
-                event_filter,
-            )
+            _LOGGER.info("TechPoint: webhook registered on controller at %s", registered_at)
+            _LOGGER.debug("TechPoint: webhook event filter: %s", event_filter)
             if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
                 hass.data[DOMAIN][entry.entry_id]["webhook_registered_at"] = registered_at
     except Exception as err:  # noqa: BLE001
@@ -608,7 +712,7 @@ async def async_unload_realtime_events(hass: HomeAssistant, entry, client) -> No
     leave TechPoint with no webhook until the new setup completes (or fails).
     """
     try:
-        async_unregister(hass, _webhook_id(entry.entry_id))
+        async_unregister(hass, _webhook_id(entry))
     except Exception:  # noqa: BLE001
         pass
 
@@ -626,6 +730,6 @@ async def async_remove_realtime_events(hass: HomeAssistant, entry, client) -> No
         pass
 
     try:
-        async_unregister(hass, _webhook_id(entry.entry_id))
+        async_unregister(hass, _webhook_id(entry))
     except Exception:  # noqa: BLE001
         pass
