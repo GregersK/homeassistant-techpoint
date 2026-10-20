@@ -24,7 +24,15 @@ REDACT_KEYS = {
     "lan_password",
     "lan_token",
     "lan_username",
+    "username",
+    "device_id",
+    "webhook_id",
+    "webhook_url",
 }
+
+# Only non-personal fields of the latest event: no cardholder/operator name,
+# credential numbers or raw details.
+_EVENT_SUMMARY_KEYS = ("category", "type_id", "type_name", "action", "source", "event_time_utc")
 
 
 async def async_get_config_entry_diagnostics(
@@ -40,6 +48,8 @@ async def async_get_config_entry_diagnostics(
 
     event_log = data.get("event_log") or []
     last_event = event_log[0] if isinstance(event_log, list) and event_log else None
+    if isinstance(last_event, dict):
+        last_event = {k: last_event.get(k) for k in _EVENT_SUMMARY_KEYS}
 
     diag: dict[str, Any] = {
         "entry": {
@@ -48,11 +58,15 @@ async def async_get_config_entry_diagnostics(
             "version": entry.version,
         },
         "config": cfg,
-        "realtime": {
-            "webhook_id": data.get("webhook_id"),
-            "webhook_url": data.get("webhook_url"),
-            "webhook_filter": data.get("webhook_filter"),
-        },
+        "realtime": async_redact_data(
+            {
+                "webhook_id": data.get("webhook_id"),
+                "webhook_url": data.get("webhook_url"),
+                "webhook_filter": data.get("webhook_filter"),
+                "allowed_sources": len(data.get("webhook_allowed_ips") or ()),
+            },
+            REDACT_KEYS,
+        ),
         "event_log": {
             "count": len(event_log) if isinstance(event_log, list) else 0,
             "last": last_event,

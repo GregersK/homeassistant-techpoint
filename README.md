@@ -2,7 +2,7 @@
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-0.10.4-blue.svg)
+![Version](https://img.shields.io/badge/version-0.11.0-blue.svg)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2026.3-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
@@ -80,10 +80,10 @@ Restart Home Assistant.
 | **Lock** | Door lock — lock (Secure) / unlock (Permanent release) |
 | **Select** | Door mode selection (Normal, Release, PermanentRelease, Secure, Block) |
 | **Button** | Pulse-open a door (momentary release) |
-| **Alarm Control Panel** | Area intrusion arm/disarm |
+| **Alarm Control Panel** | Area intrusion arm (away) / disarm |
 | **Binary Sensor** | Door open, door tamper, zone intrusion detection, user-defined inputs (ioType 28) |
 | **Switch** | User-defined outputs (ioType 29) — toggle active/passive; global door control |
-| **Sensor** | Door status, cardholder count, event log, webhook URL |
+| **Sensor** | Door status, cardholder count, event log |
 | **Select** (controller) | Threat level (off, normal, level 1–3) |
 
 ## Device Grouping
@@ -205,7 +205,7 @@ Configure which event categories to receive under **Options** (all enabled by de
 - Tamper/sabotage events
 - Error/fault events
 
-The webhook URL is shown in the **Options** page for easy reference. On integration reload or update, the webhook registration is preserved — no manual reconfiguration in TechPoint is needed. The webhook is only removed when the integration is fully uninstalled.
+The webhook only accepts calls from the configured controller address and is not reachable through Home Assistant Cloud. Its URL contains a random id and is shown on the **Options** page (admins only) for reference. On integration reload or update, the webhook registration is preserved — no manual reconfiguration in TechPoint is needed. The webhook is only removed when the integration is fully uninstalled.
 
 > **Note:** Real-time events are not supported in Cloud mode.
 
@@ -228,6 +228,11 @@ The webhook URL is shown in the **Options** page for easy reference. On integrat
 - Confirm the Home Assistant instance is reachable from the TechPoint controller
 - Check that outbound HTTPS to Home Assistant is not blocked on the LAN
 - Review Home Assistant logs for webhook registration errors
+- A log line *"rejected webhook call from …"* means the request did not come from the controller address configured in the integration. If the controller reaches Home Assistant through NAT or a proxy, configure the integration with the address Home Assistant sees.
+
+### Privacy
+
+Card numbers and chip serials from access events are never stored in entity attributes, sent on the event bus or included in diagnostics. The rolling event log is kept out of the recorder.
 
 ## Development
 
