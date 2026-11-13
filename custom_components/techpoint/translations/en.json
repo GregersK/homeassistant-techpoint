@@ -81,7 +81,8 @@
           "events_error": "Realtime: Error/fault events",
           "events_tamper": "Realtime: Tamper/sabotage events",
           "scan_interval": "Update interval (seconds)",
-          "verify_ssl": "Verify SSL certificate"
+          "verify_ssl": "Verify SSL certificate",
+          "input_scan_interval": "Input update interval (seconds)"
         },
         "description": "Adjust polling, SSL verification and how devices are grouped in Devices.\n\nWebhook URL (copy/paste into controller UI):\n{webhook_url}\n\nController endpoint: {tp_endpoint}\nAuthentication: {auth_type}",
         "title": "Controller options"

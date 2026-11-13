@@ -30,15 +30,21 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         client,
         name: str,
         update_interval_s: int,
+        input_interval_s: int,
     ) -> None:
+        # The coordinator ticks at the (fast) input interval. Most ticks fetch only
+        # the user-defined inputs; everything else is fetched every update_interval_s.
         super().__init__(
             hass,
             _LOGGER,
             config_entry=entry,
             name=name,
-            update_interval=timedelta(seconds=update_interval_s),
+            update_interval=timedelta(seconds=max(1, min(input_interval_s, update_interval_s))),
         )
         self.client = client
+        self._full_interval_s = max(1, update_interval_s)
+        self._last_full: float | None = None
+        self._force_full = False
         # Per-key failure bookkeeping for optional resources: consecutive failure
         # count and the monotonic time before which we won't retry that key.
         # A transient failure backs off and retries on its own — it never
@@ -61,7 +67,53 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             return now - self._slow_fetched_at[key] >= _SLOW_INTERVAL_S
         return True
 
+    async def async_request_refresh(self) -> None:
+        # Requested refreshes (after an entity command or a webhook event) should
+        # pick up everything, not just the inputs.
+        self._force_full = True
+        await super().async_request_refresh()
+
     async def _async_update_data(self) -> Dict[str, Any]:
+        now = time.monotonic()
+        full_due = (
+            self._force_full
+            or self.data is None
+            or self._last_full is None
+            # Small tolerance so tick jitter doesn't push a full update one tick late.
+            or now - self._last_full >= self._full_interval_s - 0.5
+        )
+        if full_due:
+            self._force_full = False
+            data = await self._async_full_update()
+            self._last_full = now
+            return data
+        return await self._async_inputs_update(now)
+
+    async def _async_inputs_update(self, now: float) -> Dict[str, Any]:
+        """Refresh only the user-defined inputs, reusing everything else from the last poll."""
+        data = dict(self.data or {})
+        get_io = getattr(self.client, "get_io_userdefined", None)
+        ok_keys: set[str] = set()
+        if get_io and self._due_for_retry("io_inputs", now):
+            try:
+                data["io_inputs"] = await get_io(28) or []
+            except Exception as err:  # noqa: BLE001
+                self._record_failure("io_inputs", now, err)
+            else:
+                self._key_fail_count.pop("io_inputs", None)
+                self._key_retry_after.pop("io_inputs", None)
+                ok_keys.add("io_inputs")
+        self.last_cycle_ok_keys = ok_keys
+        return data
+
+    def _record_failure(self, key: str, now: float, err: BaseException) -> None:
+        count = self._key_fail_count.get(key, 0) + 1
+        self._key_fail_count[key] = count
+        backoff = _RETRY_BACKOFF_S[min(count, len(_RETRY_BACKOFF_S)) - 1]
+        self._key_retry_after[key] = now + backoff
+        _LOGGER.warning("TechPoint: %s fetch failed (retrying in %ss): %s", key, backoff, err)
+
+    async def _async_full_update(self) -> Dict[str, Any]:
         """Fetch doors, AIA area/zone status, user-defined I/O, cardholder count, and controller state."""
         try:
             list_areas = getattr(self.client, "list_areas_status", None) or getattr(self.client, "list_areas", None)
@@ -117,16 +169,7 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
                     if key != "doors":
-                        count = self._key_fail_count.get(key, 0) + 1
-                        self._key_fail_count[key] = count
-                        backoff = _RETRY_BACKOFF_S[min(count, len(_RETRY_BACKOFF_S)) - 1]
-                        self._key_retry_after[key] = now + backoff
-                        _LOGGER.warning(
-                            "TechPoint: %s fetch failed (retrying in %ss): %s",
-                            key,
-                            backoff,
-                            val,
-                        )
+                        self._record_failure(key, now, val)
                     else:
                         _LOGGER.debug("TechPoint: %s fetch failed: %s", key, val)
                     continue

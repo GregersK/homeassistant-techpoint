@@ -21,9 +21,14 @@ Security and privacy fixes from the HACS review, and a much lighter load on the 
     only fetches live status (7 requests).
   - Webhook events now trigger an immediate (debounced) refresh, so state
     changes show up right away without fast polling.
-  - The default update interval for new installations is 30 seconds instead of
-    10. Existing installations keep their setting; change it under Options.
-  - Roughly 21,000 requests per day at 30 s, down from about 104,000 at 10 s.
+  - **User-defined inputs have their own, fast schedule** (new option *Input
+    update interval*, default 5 s): most polls fetch only the inputs, one small
+    request. Everything else is fetched on the normal update interval, whose
+    default for new installations is now 60 s instead of 10. Existing
+    installations keep their setting; change it under Options. A command from
+    Home Assistant or a webhook event still refreshes everything at once.
+  - With the defaults that is roughly 26,000 small, sequential requests per
+    day, down from about 104,000 requests in bursts of 12.
 
 ### Security
 - **Webhook only accepts the controller.** Calls whose source address is not the

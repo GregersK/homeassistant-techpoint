@@ -13,9 +13,11 @@ from .api.factory import create_client
 from .const import (
     CONF_BASE_URL,
     CONF_DEVICE_GROUPING,
+    CONF_INPUT_SCAN_INTERVAL,
     CONF_NAME,
     CONF_SCAN_INTERVAL,
     DEFAULT_DEVICE_GROUPING,
+    DEFAULT_INPUT_SCAN_INTERVAL,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -110,6 +112,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         client,
         cfg.get(CONF_NAME, DEFAULT_NAME),
         int(cfg.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
+        int(cfg.get(CONF_INPUT_SCAN_INTERVAL, DEFAULT_INPUT_SCAN_INTERVAL)),
     )
 
     try:
