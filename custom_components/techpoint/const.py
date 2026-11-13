@@ -38,7 +38,10 @@ GROUP_BY_ITEM = "item"
 DEVICE_GROUPINGS = [GROUP_BY_TYPE, GROUP_BY_ITEM]
 DEFAULT_DEVICE_GROUPING = GROUP_BY_TYPE
 
-DEFAULT_SCAN_INTERVAL = 10
+DEFAULT_SCAN_INTERVAL = 60
+# User-defined inputs are polled on their own, faster schedule.
+CONF_INPUT_SCAN_INTERVAL = "input_scan_interval"
+DEFAULT_INPUT_SCAN_INTERVAL = 5
 
 # Default SSL settings:
 # - LAN controllers are often using self-signed certificates

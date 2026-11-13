@@ -5,9 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.11.0] - 2026-10-20
+## [0.11.0] - 2026-11-13
 
-Security and privacy fixes from the HACS review.
+Security and privacy fixes from the HACS review, and a much lighter load on the controller.
+
+### Performance
+- **The integration no longer overloads the controller's web service.** Each poll
+  used to send 12 HTTPS requests to the controller at the same time (door, area
+  and zone config plus status, API info, inputs, outputs, cardholder count,
+  global door control, threat level), every 10 seconds by default.
+  - Requests are now sent one at a time over a reused connection, instead of up
+    to 12 in parallel.
+  - Door, area and zone configuration (names) is cached for 15 minutes, and API
+    info and the cardholder count are refreshed every 15 minutes; each poll
+    only fetches live status (7 requests).
+  - Webhook events now trigger an immediate (debounced) refresh, so state
+    changes show up right away without fast polling.
+  - **User-defined inputs have their own, fast schedule** (new option *Input
+    update interval*, default 5 s): most polls fetch only the inputs, one small
+    request. Everything else is fetched on the normal update interval, whose
+    default for new installations is now 60 s instead of 10. Existing
+    installations keep their setting; change it under Options. A command from
+    Home Assistant or a webhook event still refreshes everything at once.
+  - With the defaults that is roughly 26,000 small, sequential requests per
+    day, down from about 104,000 requests in bursts of 12.
 
 ### Security
 - **Webhook only accepts the controller.** Calls whose source address is not the

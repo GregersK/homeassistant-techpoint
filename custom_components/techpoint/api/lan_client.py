@@ -1,8 +1,12 @@
 from __future__ import annotations
-import asyncio, json, logging as _logging
+import asyncio, json, logging as _logging, time
 from typing import Any, Dict, Optional, List, Union
 
 _LOGGER = _logging.getLogger(__name__)
+
+# Door/area/zone configuration (names, links) rarely changes; refetching it on
+# every poll doubled the load on the controller's small embedded web server.
+_CONFIG_CACHE_TTL_S = 900
 from aiohttp import ClientError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -111,6 +115,26 @@ class LanApiClient(BaseApiClient):
         self.session = async_get_clientsession(hass, verify_ssl=verify_ssl)
         self._token = entry_data.get("lan_token")
         self._intrusion_profile_id: Optional[int] = None
+        # The controller's embedded web server struggles with parallel requests, so
+        # requests are sent one at a time over a reused keep-alive connection.
+        self._request_lock = asyncio.Lock()
+        self._config_cache: Dict[str, tuple[float, Any]] = {}
+
+    async def _cached_config(self, key: str, path: str, body: Any) -> Any:
+        """Return a config response, refetching it at most every _CONFIG_CACHE_TTL_S."""
+        now = time.monotonic()
+        cached = self._config_cache.get(key)
+        if cached and now - cached[0] < _CONFIG_CACHE_TTL_S:
+            return cached[1]
+        try:
+            js = await self._request("POST", path, body=body)
+        except Exception:
+            if cached:
+                # Keep names from the last good fetch rather than failing the poll.
+                return cached[1]
+            raise
+        self._config_cache[key] = (now, js)
+        return js
 
     def _headers(self) -> Dict[str, str]:
         h = {"Accept": "application/json", "Content-Type": "application/json"}
@@ -132,7 +156,9 @@ class LanApiClient(BaseApiClient):
             from aiohttp import BasicAuth
             auth = BasicAuth(self.data.get("lan_username") or "", self.data.get("lan_password") or "")
         try:
-            async with self.session.request(method, url, headers=headers, params=params, json=effective_body, auth=auth, timeout=25) as resp:
+            async with self._request_lock, self.session.request(
+                method, url, headers=headers, params=params, json=effective_body, auth=auth, timeout=25
+            ) as resp:
                 # Giv bedre fejlbeskeder end aiohttp's raise_for_status (som ikke viser body)
                 if resp.status >= 400:
                     txt = await resp.text()
@@ -160,10 +186,8 @@ class LanApiClient(BaseApiClient):
         """Return doors with merged config (names) + status."""
         body = build_doors_status_body(False)
 
-        cfg, status_js = await asyncio.gather(
-            self._request("POST", PATH_DOORS_CONFIG, body=body),
-            self._request("POST", PATH_DOORS_STATUS_LIST, body=body),
-        )
+        cfg = await self._cached_config("doors", PATH_DOORS_CONFIG, body)
+        status_js = await self._request("POST", PATH_DOORS_STATUS_LIST, body=body)
         cfg_records = _records(cfg)
         status_records = map_doors_status_response(status_js)
 
@@ -240,10 +264,8 @@ class LanApiClient(BaseApiClient):
     # ---------- Intrusion (AIA) ----------
     async def list_areas_status(self) -> List[Dict[str, Any]]:
         """Return intrusion areas with merged config (names) + status."""
-        cfg, st_js = await asyncio.gather(
-            self._request("POST", PATH_INTRUSION_AREAS_CONFIG, body=build_intrusion_filter(17, False)),
-            self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(17, True)),
-        )
+        cfg = await self._cached_config("areas", PATH_INTRUSION_AREAS_CONFIG, build_intrusion_filter(17, False))
+        st_js = await self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(17, True))
         cfg_records = _records(cfg)
         st_records = map_intrusion_status_response(st_js)
 
@@ -291,10 +313,8 @@ class LanApiClient(BaseApiClient):
 
     async def list_zones_status(self) -> List[Dict[str, Any]]:
         """Return intrusion zones with merged config (names) + status."""
-        cfg, st_js = await asyncio.gather(
-            self._request("POST", PATH_INTRUSION_ZONES_CONFIG, body=build_intrusion_filter(16, False)),
-            self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(16, True)),
-        )
+        cfg = await self._cached_config("zones", PATH_INTRUSION_ZONES_CONFIG, build_intrusion_filter(16, False))
+        st_js = await self._request("POST", PATH_INTRUSION_STATUS, body=build_intrusion_filter(16, True))
         cfg_records = _records(cfg)
         st_records = map_intrusion_status_response(st_js)
 

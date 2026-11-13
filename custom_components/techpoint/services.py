@@ -120,7 +120,9 @@ def _stale_entity_ids_for_entry(
         kind, obj_id, _sub = parsed
         data_key = UID_KIND_TO_DATA_KEY[kind]
         if data_key not in ok_keys:
-            # Last poll for this resource type failed/disabled — don't trust absence.
+            # Not fetched (or failed) on this poll — don't trust absence, but keep
+            # any running miss count so polls that skip this kind don't reset it.
+            seen.add(ent.unique_id)
             continue
         if obj_id in _valid_ids_for_key(snapshot, data_key):
             missing_counts.pop(ent.unique_id, None)

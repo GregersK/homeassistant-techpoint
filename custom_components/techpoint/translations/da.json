@@ -81,7 +81,8 @@
           "events_error": "Realtid: Fejl/alarmer",
           "events_tamper": "Realtid: Sabotage/manipulation",
           "scan_interval": "Opdateringsinterval (sekunder)",
-          "verify_ssl": "Verificér SSL-certifikat"
+          "verify_ssl": "Verificér SSL-certifikat",
+          "input_scan_interval": "Opdateringsinterval for inputs (sekunder)"
         },
         "description": "Justér polling, SSL og hvordan enheder grupperes under Enheder.\n\nWebhook-URL (kopiér/indsæt i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nGodkendelse: {auth_type}",
         "title": "Controllerindstillinger"
