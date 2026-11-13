@@ -16,6 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 # type until the integration is reloaded. Capped at the last value.
 _RETRY_BACKOFF_S = (30, 60, 120, 300)
 
+# Data that rarely changes is fetched at most this often; in between, the last
+# value is reused, so each poll only asks the controller for live status.
+_SLOW_KEYS = {"api_info": "api_info", "cardholders_meta": "cardholder_count"}
+_SLOW_INTERVAL_S = 900
+
 
 class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
     def __init__(
@@ -47,9 +52,14 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         # that key's data empty for the cycle) can never be mistaken for a
         # door/zone/output that was actually removed on the controller.
         self.last_cycle_ok_keys: set[str] = set()
+        self._slow_fetched_at: dict[str, float] = {}
 
     def _due_for_retry(self, key: str, now: float) -> bool:
-        return now >= self._key_retry_after.get(key, 0.0)
+        if now < self._key_retry_after.get(key, 0.0):
+            return False
+        if key in _SLOW_KEYS and key in self._slow_fetched_at:
+            return now - self._slow_fetched_at[key] >= _SLOW_INTERVAL_S
+        return True
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch doors, AIA area/zone status, user-defined I/O, cardholder count, and controller state."""
@@ -98,6 +108,11 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 "io_inputs": [], "io_outputs": [], "cardholder_count": None,
                 "global_door_control_active": None, "threat_level": None,
             }
+            # Carry over slow data that isn't refetched this cycle.
+            prev = self.data or {}
+            for data_key in _SLOW_KEYS.values():
+                if prev.get(data_key) is not None:
+                    data[data_key] = prev[data_key]
             ok_keys: set[str] = set()
             for key, val in zip(task_keys, results):
                 if isinstance(val, Exception):
@@ -118,6 +133,8 @@ class TechPointCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 if key != "doors":
                     self._key_fail_count.pop(key, None)
                     self._key_retry_after.pop(key, None)
+                if key in _SLOW_KEYS:
+                    self._slow_fetched_at[key] = now
                 ok_keys.add(key)
                 if key == "cardholders_meta":
                     data["cardholder_count"] = (val or {}).get("count") if isinstance(val, dict) else None

@@ -17,6 +17,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_DEVICE_GROUPING,
     DEFAULT_NAME,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MANUFACTURER,
     MODEL_CONTROLLER,
@@ -108,7 +109,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry,
         client,
         cfg.get(CONF_NAME, DEFAULT_NAME),
-        int(cfg.get(CONF_SCAN_INTERVAL, 10)),
+        int(cfg.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
     )
 
     try:

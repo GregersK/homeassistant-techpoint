@@ -38,7 +38,7 @@ GROUP_BY_ITEM = "item"
 DEVICE_GROUPINGS = [GROUP_BY_TYPE, GROUP_BY_ITEM]
 DEFAULT_DEVICE_GROUPING = GROUP_BY_TYPE
 
-DEFAULT_SCAN_INTERVAL = 10
+DEFAULT_SCAN_INTERVAL = 30
 
 # Default SSL settings:
 # - LAN controllers are often using self-signed certificates

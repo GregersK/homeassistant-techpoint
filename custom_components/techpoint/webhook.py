@@ -551,6 +551,11 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request):
 
     if forwarded:
         _LOGGER.debug("TechPoint webhook: forwarded %s event(s)", forwarded)
+        # Pick up the new door/alarm/IO state now instead of at the next poll. The
+        # coordinator's debouncer collapses bursts of events into one refresh.
+        coordinator = entry_data.get("coordinator")
+        if coordinator is not None:
+            hass.async_create_task(coordinator.async_request_refresh(), "techpoint webhook refresh")
 
 
 def _build_event_filter(
