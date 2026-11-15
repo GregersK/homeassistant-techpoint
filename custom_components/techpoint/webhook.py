@@ -413,6 +413,17 @@ def _classify_event(type_name: Optional[str], details_values: List[str]) -> str:
     return "other"
 
 
+# Which poll groups an event can change. "error" and "other" events (which can
+# include the controller logging our own API calls) trigger no refresh at all, so
+# polling can never feed back into itself through the webhook.
+_CATEGORY_REFRESH_GROUPS: Dict[str, Tuple[str, ...]] = {
+    "door": ("doors",),
+    "io": ("inputs", "outputs"),
+    "alarm": ("areas", "zones"),
+    "tamper": ("doors", "zones"),
+}
+
+
 def _is_enabled(category: str, enabled: Tuple[bool, bool, bool, bool]) -> bool:
     door_on, alarm_on, tamper_on, error_on = enabled
     if category == "door":
@@ -502,6 +513,7 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request):
     type_names: Dict[int, str] = entry_data.get("event_type_names") or {}
 
     forwarded = 0
+    refresh_groups: set = set()
     for ev in _iter_events(payload):
         type_id = ev.get("type")
         try:
@@ -532,6 +544,7 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request):
         hass.bus.async_fire(EVENT_BUS_NAME, data)
         hass.bus.async_fire(f"{DOMAIN}_event", data)
         forwarded += 1
+        refresh_groups.update(_CATEGORY_REFRESH_GROUPS.get(category, ()))
 
         # Keep a rolling in-memory log for UI/dashboard usage
         try:
@@ -551,11 +564,14 @@ async def _handle_webhook(hass: HomeAssistant, webhook_id: str, request):
 
     if forwarded:
         _LOGGER.debug("TechPoint webhook: forwarded %s event(s)", forwarded)
-        # Pick up the new door/alarm/IO state now instead of at the next poll. The
-        # coordinator's debouncer collapses bursts of events into one refresh.
-        coordinator = entry_data.get("coordinator")
-        if coordinator is not None:
-            hass.async_create_task(coordinator.async_request_refresh(), "techpoint webhook refresh")
+    # Pick up the changed state now instead of at the next poll, fetching only what
+    # the events relate to. The coordinator's debouncer collapses bursts of events.
+    coordinator = entry_data.get("coordinator")
+    if refresh_groups and coordinator is not None:
+        hass.async_create_task(
+            coordinator.async_request_group_refresh(*sorted(refresh_groups)),
+            "techpoint webhook refresh",
+        )
 
 
 def _build_event_filter(

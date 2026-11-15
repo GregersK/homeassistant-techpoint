@@ -109,7 +109,7 @@ class TechPointDoorModeSelect(CoordinatorEntity, SelectEntity):
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         api_value = OPTION_TO_API.get(option, option)
         await client.set_door_status(self._door_id, api_value)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("doors")
 
     @property
     def extra_state_attributes(self):
@@ -181,7 +181,7 @@ class TechPointThreatLevelSelect(CoordinatorEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_threat_level(_THREAT_LEVEL_TO_API.get(option, 0))
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("controller")
 
     @property
     def extra_state_attributes(self) -> dict:

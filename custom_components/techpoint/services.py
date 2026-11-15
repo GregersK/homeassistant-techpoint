@@ -327,7 +327,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         # Refresh only once per unique entry id
         for entry_id in sorted({h.get("entry_id") for h in handled if h.get("ok") and h.get("entry_id")}) :
             coord = _get_coordinator(hass, entry_id)
-            await coord.async_request_refresh()
+            await coord.async_request_group_refresh("doors")
 
         return {"handled": handled}
 
