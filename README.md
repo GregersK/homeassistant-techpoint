@@ -2,7 +2,7 @@
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-0.11.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.11.1-blue.svg)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2026.3-blue.svg)](https://www.home-assistant.io/)
 
 Custom Home Assistant integration for **TechPoint Access Control Systems** (both cloud and LAN-based controllers).
@@ -86,6 +86,21 @@ Restart Home Assistant.
 | **Sensor** | Door status, cardholder count, event log |
 | **Select** (controller) | Threat level (off, normal, level 1–3) |
 
+## Update intervals
+
+Each kind of data is fetched on its own schedule, so the time-critical inputs can be fast without the controller having to answer everything else that often. Set them under **Options**:
+
+| Data | Default |
+|---|---|
+| Inputs (user-defined, ioType 28) | 4 s |
+| Outputs (ioType 29) | 10 s |
+| Doors | 10 s |
+| Alarm areas | 10 s |
+| Alarm zones | 60 s |
+| Other (global door control, threat level) | 60 s |
+
+Requests are sent one at a time. Door/area/zone names, the API version and the cardholder count are refreshed every 15 minutes. A command from Home Assistant, or a realtime event from the controller, refreshes only the data it concerns right away.
+
 ## Device Grouping
 
 By default, devices are grouped **by type** (Doors, Zones, Areas). You can also group **per-item** for a flatter structure.
@@ -147,7 +162,7 @@ You get one card per door (lock, open/tamper sensors, mode select, pulse button)
 
 When a door, zone, area or I/O is deleted on the TechPoint controller, its entities are removed automatically once several consecutive polls confirm it is gone, so a single failed request never deletes anything. Run `techpoint.cleanup_stale_entities` to clean up immediately.
 
-If the controller or network is briefly unreachable, affected data is retried with increasing intervals (30 s up to 5 min) and recovers by itself — no reload needed.
+If the controller or network is briefly unreachable, affected data is retried with increasing intervals (10 s up to 5 min), and everything resumes as soon as the controller answers again — no reload needed.
 
 ## Access Management Package
 

@@ -39,9 +39,25 @@ DEVICE_GROUPINGS = [GROUP_BY_TYPE, GROUP_BY_ITEM]
 DEFAULT_DEVICE_GROUPING = GROUP_BY_TYPE
 
 DEFAULT_SCAN_INTERVAL = 60
-# User-defined inputs are polled on their own, faster schedule.
+
+# Each kind of data is polled on its own interval, so time-critical inputs can be
+# fast without making the controller answer everything else that often.
+# CONF_SCAN_INTERVAL covers the remaining controller state (global door control,
+# threat level).
 CONF_INPUT_SCAN_INTERVAL = "input_scan_interval"
-DEFAULT_INPUT_SCAN_INTERVAL = 5
+CONF_OUTPUT_SCAN_INTERVAL = "output_scan_interval"
+CONF_DOOR_SCAN_INTERVAL = "door_scan_interval"
+CONF_AREA_SCAN_INTERVAL = "area_scan_interval"
+CONF_ZONE_SCAN_INTERVAL = "zone_scan_interval"
+# poll group (see coordinator.POLL_GROUPS) -> (option key, default seconds)
+POLL_INTERVAL_OPTIONS: dict[str, tuple[str, int]] = {
+    "inputs": (CONF_INPUT_SCAN_INTERVAL, 4),
+    "outputs": (CONF_OUTPUT_SCAN_INTERVAL, 10),
+    "doors": (CONF_DOOR_SCAN_INTERVAL, 10),
+    "areas": (CONF_AREA_SCAN_INTERVAL, 10),
+    "zones": (CONF_ZONE_SCAN_INTERVAL, 60),
+    "controller": (CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+}
 
 # Default SSL settings:
 # - LAN controllers are often using self-signed certificates

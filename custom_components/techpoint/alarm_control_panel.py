@@ -93,13 +93,13 @@ class TechPointAreaAlarm(CoordinatorEntity, AlarmControlPanelEntity):
         # TechPoint: command 2 = Unset (disarm)
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.intrusion_command([self._io_id], 2)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("areas")
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         # TechPoint: command 3 = Set (arm)
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.intrusion_command([self._io_id], 3)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("areas")
 
     @property
     def extra_state_attributes(self):

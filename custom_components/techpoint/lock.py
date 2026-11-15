@@ -76,13 +76,13 @@ class TechPointDoorLock(CoordinatorEntity, LockEntity):
     async def async_lock(self) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_door_status(self._door_id, "Secure")
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("doors")
 
     async def async_unlock(self) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         # In TechPoint, 'unlock' typically maps to permanent release
         await client.set_door_status(self._door_id, "PermanentRelease")
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("doors")
 
     @property
     def extra_state_attributes(self):

@@ -76,7 +76,7 @@ class TechPointDoorPulseButton(CoordinatorEntity, ButtonEntity):
         """Send a pulse (Release) command to the door and refresh state."""
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_door_status(self._door_id, "Release")
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("doors")
 
     @property
     def extra_state_attributes(self):

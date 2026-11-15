@@ -20,7 +20,7 @@
           "device_id": "Enheds-ID",
           "name": "Navn",
           "password": "Adgangskode",
-          "scan_interval": "Opdateringsinterval (sekunder)",
+          "scan_interval": "Øvrigt (global dørstyring, trusselsniveau): opdateringsinterval (sekunder)",
           "username": "Brugernavn",
           "verify_ssl": "Verificér SSL-certifikat"
         },
@@ -34,7 +34,7 @@
           "lan_token": "Bearer-token (valgfri)",
           "lan_username": "Brugernavn",
           "name": "Navn",
-          "scan_interval": "Opdateringsinterval (sekunder)",
+          "scan_interval": "Øvrigt (global dørstyring, trusselsniveau): opdateringsinterval (sekunder)",
           "verify_ssl": "Verificér SSL-certifikat"
         },
         "description": "Indtast kun IP/host. Integrationen tilføjer automatisk /api/v1. Hvis controlleren bruger et selvsigneret certifikat, så lad SSL-verificering være slået fra.",
@@ -80,9 +80,13 @@
           "events_door": "Realtid: Dør/adgang-hændelser",
           "events_error": "Realtid: Fejl/alarmer",
           "events_tamper": "Realtid: Sabotage/manipulation",
-          "scan_interval": "Opdateringsinterval (sekunder)",
+          "scan_interval": "Øvrigt (global dørstyring, trusselsniveau): opdateringsinterval (sekunder)",
           "verify_ssl": "Verificér SSL-certifikat",
-          "input_scan_interval": "Opdateringsinterval for inputs (sekunder)"
+          "input_scan_interval": "Inputs: opdateringsinterval (sekunder)",
+          "output_scan_interval": "Outputs: opdateringsinterval (sekunder)",
+          "door_scan_interval": "Døre: opdateringsinterval (sekunder)",
+          "area_scan_interval": "Alarmområder: opdateringsinterval (sekunder)",
+          "zone_scan_interval": "Alarmzoner: opdateringsinterval (sekunder)"
         },
         "description": "Justér polling, SSL og hvordan enheder grupperes under Enheder.\n\nWebhook-URL (kopiér/indsæt i TechPoint):\n{webhook_url}\n\nTechPoint-endepunkt: {tp_endpoint}\nGodkendelse: {auth_type}",
         "title": "Controllerindstillinger"

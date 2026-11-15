@@ -19,8 +19,7 @@ from .const import (
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
-    CONF_INPUT_SCAN_INTERVAL,
-    DEFAULT_INPUT_SCAN_INTERVAL,
+    POLL_INTERVAL_OPTIONS,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
     DEFAULT_AUTH_TYPE,
@@ -191,8 +190,10 @@ class TechPointOptionsFlowHandler(config_entries.OptionsFlow):
         is_lan = cur.get(CONF_MODE) == MODE_LAN
 
         schema = vol.Schema({
-            vol.Optional(CONF_SCAN_INTERVAL, default=cur.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)): vol.All(vol.Coerce(int), vol.Range(min=5)),
-            vol.Optional(CONF_INPUT_SCAN_INTERVAL, default=cur.get(CONF_INPUT_SCAN_INTERVAL, DEFAULT_INPUT_SCAN_INTERVAL)): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            **{
+                vol.Optional(key, default=cur.get(key, default)): vol.All(vol.Coerce(int), vol.Range(min=1))
+                for key, default in POLL_INTERVAL_OPTIONS.values()
+            },
             vol.Optional(CONF_VERIFY_SSL, default=cur.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL_LAN if is_lan else DEFAULT_VERIFY_SSL_CLOUD)): bool,
             vol.Optional(CONF_DEVICE_GROUPING, default=cur.get(CONF_DEVICE_GROUPING, DEFAULT_DEVICE_GROUPING)): vol.In(DEVICE_GROUPINGS),
             # Realtime events (LAN only). Default True for LAN so webhook is registered automatically.

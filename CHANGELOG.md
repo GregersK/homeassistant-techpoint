@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-11-15
+
+### Changed
+- **Separate update interval per kind of data**, set under Options: inputs
+  (default 4 s), outputs (10 s), doors (10 s), alarm areas (10 s), alarm zones
+  (60 s), and other controller state such as global door control and threat
+  level (60 s, the existing *Update interval* setting). The coordinator wakes up
+  exactly when the next one is due, so most wake-ups send a single small
+  request. Existing installations keep their stored values for inputs and
+  "other"; check them under Options after upgrading.
+- Commands from Home Assistant refresh only what they changed (a door button
+  refreshes doors, an output switch refreshes outputs, and so on) instead of
+  everything.
+
+### Fixed
+- **Realtime events no longer trigger a full refresh.** Every forwarded webhook
+  event used to refresh all data, including error and uncategorized events. If
+  the controller logs events for API calls, that turned polling into a loop
+  that fetched everything about every 10 seconds regardless of the configured
+  interval. Events now refresh only what they concern (door events → doors,
+  I/O events → inputs and outputs, alarm events → areas and zones, tamper →
+  doors and zones), and error/other events trigger no refresh at all.
+- After the controller has been unreachable, everything that backed off during
+  the outage is retried as soon as it answers again, instead of each data type
+  waiting out its own backoff (up to 5 minutes for the inputs). The first
+  retry after a failure is now after 10 s instead of 30 s.
+
 ## [0.11.0] - 2026-11-13
 
 Security and privacy fixes from the HACS review, and a much lighter load on the controller.

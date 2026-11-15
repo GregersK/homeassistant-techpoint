@@ -78,12 +78,12 @@ class TechPointOutputSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_io_userdefined(int(self._output_id), status=2)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("outputs")
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_io_userdefined(int(self._output_id), status=0)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("outputs")
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -133,9 +133,9 @@ class TechPointGlobalDoorControlSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_global_door_control(True)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("controller")
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         client = self.coordinator.hass.data[DOMAIN][self._entry_id]["client"]
         await client.set_global_door_control(False)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_group_refresh("controller")
